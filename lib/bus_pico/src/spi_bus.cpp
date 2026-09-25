@@ -5,12 +5,12 @@
 #include <hardware/gpio.h>
 #include <hardware/spi.h>
 namespace bus::pico {
-SpiBus::SpiBus(spi_inst_t* spi, uint8_t cs, uint8_t read_bit)
+SPIBus::SPIBus(spi_inst_t* spi, uint8_t cs, uint8_t read_bit)
     : spi_(spi), cs_(cs), read_bit_(read_bit) {}
-void SpiBus::init() {
+void SPIBus::init() {
     gpio_put(cs_, 1);
 }
-Status SpiBus::read_regs(uint8_t reg, std::span<uint8_t> buffer) {
+Status SPIBus::read_regs(uint8_t reg, std::span<uint8_t> buffer) {
     if (buffer.empty())
         return Status::ERROR;
     uint8_t read_reg = reg | read_bit_;
@@ -20,7 +20,7 @@ Status SpiBus::read_regs(uint8_t reg, std::span<uint8_t> buffer) {
     gpio_put(cs_, 1);
     return Status::OK;
 }
-Status SpiBus::write_reg(uint8_t reg, uint8_t data) {
+Status SPIBus::write_reg(uint8_t reg, uint8_t data) {
     uint8_t reg_write = ~(reg & read_bit_);
     std::array<uint8_t, 2> payload{reg_write, data};
     gpio_put(cs_, 0);
