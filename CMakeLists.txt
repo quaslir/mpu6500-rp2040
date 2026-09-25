@@ -29,6 +29,32 @@ if (NOT IMU_BUS MATCHES "^(SPI|I2C)$")
 endif()
 message(STATUS "MPU6500 bus for examples: ${IMU_BUS}")
 
+find_program(CLANG_FORMAT clang-format)
+
+if (CLANG_FORMAT)
+    file(GLOB_RECURSE FORMAT_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_SOURCE_DIR}/lib/*.hpp      ${CMAKE_SOURCE_DIR}/lib/*.cpp
+        ${CMAKE_SOURCE_DIR}/mpu6500/*.hpp  ${CMAKE_SOURCE_DIR}/mpu6500/*.cpp
+        ${CMAKE_SOURCE_DIR}/examples/*.hpp ${CMAKE_SOURCE_DIR}/examples/*.cpp
+        ${CMAKE_SOURCE_DIR}/tests/*.hpp    ${CMAKE_SOURCE_DIR}/tests/*.cpp
+    )
+
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT} -i ${FORMAT_SOURCES}
+        COMMENT "Formatting sources with clang-format"
+        VERBATIM
+    )
+
+    add_custom_target(format-check
+        COMMAND ${CLANG_FORMAT} --dry-run --Werror ${FORMAT_SOURCES}
+        COMMENT "Checking formatting with clang-format"
+        VERBATIM
+    )
+else()
+    message(STATUS "clang-format not found: 'format' targets disabled")
+endif()
+
+
 add_subdirectory(lib/bus)
 add_subdirectory(lib/bus_pico)
 add_subdirectory(mpu6500)
