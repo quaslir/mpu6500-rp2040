@@ -15,6 +15,16 @@ struct Config {
     GyroRange starting_gyroscope_range = GyroRange::Dps250;
 };
 
+struct Vec3 {
+    float x, y, z;
+};
+
+struct Sample {
+Vec3 accel_g;
+Vec3 gyro_dps;
+float temperature_c;
+};
+
 using WaitFunction = void (*)(uint32_t timeout_us);
 class Mpu6500 {
 public:
@@ -28,7 +38,7 @@ public:
     [[nodiscard]] Status set_gyro_range(GyroRange range);
     [[nodiscard]] AccelRange accel_range() const;
     [[nodiscard]] GyroRange gyro_range() const;
-
+    [[nodiscard]] Status read_all(Sample &sample) const;
 private:
     bus::Bus& bus_;
     WaitFunction wait_;

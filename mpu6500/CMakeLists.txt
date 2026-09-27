@@ -7,6 +7,6 @@ target_include_directories(mpu6500
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-target_link_libraries(mpu6500 PUBLIC bus)
+target_link_libraries(mpu6500 PUBLIC bus pico_float)
 
 target_compile_options(mpu6500 PRIVATE -Wall -Wextra)
