@@ -25,7 +25,6 @@ inline constexpr uint8_t GYRO_YOUT_L{0x46};
 inline constexpr uint8_t GYRO_ZOUT_H{0x47};
 inline constexpr uint8_t GYRO_ZOUT_L{0x48};
 
-
 inline constexpr uint8_t EXPECTED_DEVICE_ID{0x70};
 
 inline constexpr uint8_t PWR_MGMT_1_DEVICE_RESET{0x80};
@@ -66,4 +65,7 @@ inline constexpr float GYRO_SCALE_DPS250{131.0f};
 inline constexpr float GYRO_SCALE_DPS500{65.5f};
 inline constexpr float GYRO_SCALE_DPS1000{32.8f};
 inline constexpr float GYRO_SCALE_DPS2000{16.4f};
+
+inline constexpr float TEMP_SENSITIVITY{333.87f};
+inline constexpr float TEMP_OFFSET_C{21.0f};
 } // namespace mpu6500

@@ -20,9 +20,9 @@ struct Vec3 {
 };
 
 struct Sample {
-Vec3 accel_g;
-Vec3 gyro_dps;
-float temperature_c;
+    Vec3 accel_g;
+    Vec3 gyro_dps;
+    float temperature_c;
 };
 
 using WaitFunction = void (*)(uint32_t timeout_us);
@@ -38,7 +38,8 @@ public:
     [[nodiscard]] Status set_gyro_range(GyroRange range);
     [[nodiscard]] AccelRange accel_range() const;
     [[nodiscard]] GyroRange gyro_range() const;
-    [[nodiscard]] Status read_all(Sample &sample) const;
+    [[nodiscard]] Status read_all(Sample& sample) const;
+
 private:
     bus::Bus& bus_;
     WaitFunction wait_;
