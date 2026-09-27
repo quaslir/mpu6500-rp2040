@@ -11,8 +11,7 @@ Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const Config& config)
       gyro_range_(config.starting_gyroscope_range) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
-  return bus_.read_regs(
-        WHOAMI, std::span<uint8_t>(&id, 1));
+    return bus_.read_regs(WHOAMI, std::span<uint8_t>(&id, 1));
 }
 
 } // namespace mpu6500
