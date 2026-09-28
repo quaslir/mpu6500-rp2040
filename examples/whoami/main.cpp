@@ -11,7 +11,7 @@ int main() {
     stdio_init_all();
     i2c_config::init_test_i2c();
     mpu6500::Config config{};
-    bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, 1000};
+    bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, 10000};
     mpu6500::Mpu6500 mpu6500(bus, sleep_ms, config);
     uint8_t id{0};
     (void)mpu6500.who_am_i(id);

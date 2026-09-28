@@ -1,9 +1,63 @@
 #include "mpu6500/mpu6500.hpp"
 
+#include "bits.hpp"
 #include "bus/bus.hpp"
+#include "bus/status.hpp"
+#include "device.hpp"
+#include "layout.hpp"
 #include "registers.hpp"
+#include "scales.hpp"
+#include <array>
 #include <cstdint>
 #include <span>
+namespace {
+int16_t to_int16(std::span<uint8_t> data, uint8_t start_pos) {
+    return static_cast<int16_t>((data[start_pos] << 8) | data[start_pos + 1]);
+}
+
+float accel_range_to_scale(mpu6500::AccelRange range) {
+    switch (range) {
+        case mpu6500::AccelRange::G2:
+            return mpu6500::scale::ACCEL_G2;
+        case mpu6500::AccelRange::G4:
+            return mpu6500::scale::ACCEL_G4;
+        case mpu6500::AccelRange::G8:
+            return mpu6500::scale::ACCEL_G8;
+        case mpu6500::AccelRange::G16:
+            return mpu6500::scale::ACCEL_G16;
+    }
+
+    return mpu6500::scale::ACCEL_G2;
+}
+
+float gyro_range_to_scale(mpu6500::GyroRange range) {
+    switch (range) {
+        case mpu6500::GyroRange::Dps250:
+            return mpu6500::scale::GYRO_DPS250;
+        case mpu6500::GyroRange::Dps500:
+            return mpu6500::scale::GYRO_DPS500;
+        case mpu6500::GyroRange::Dps1000:
+            return mpu6500::scale::GYRO_DPS1000;
+        case mpu6500::GyroRange::Dps2000:
+            return mpu6500::scale::GYRO_DPS2000;
+    }
+    return mpu6500::scale::GYRO_DPS250;
+}
+
+mpu6500::Vec3 decode_vec3(std::span<uint8_t, 6> sample_buffer, float scale) {
+    mpu6500::Vec3 vec3;
+    const int16_t acc_x = to_int16(sample_buffer, 0);
+    const int16_t acc_y = to_int16(sample_buffer, 2);
+    const int16_t acc_z = to_int16(sample_buffer, 4);
+
+    vec3.x = acc_x / scale;
+    vec3.y = acc_y / scale;
+    vec3.z = acc_z / scale;
+
+    return vec3;
+}
+} // namespace
+
 namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const Config& config)
     : bus_(bus), wait_(wait), use_i2c_(config.use_i2c),
@@ -11,7 +65,98 @@ Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const Config& config)
       gyro_range_(config.starting_gyroscope_range) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
-    return bus_.read_regs(WHOAMI, std::span<uint8_t>(&id, 1));
+    return bus_.read_regs(reg::WHO_AM_I, std::span<uint8_t>(&id, 1));
 }
 
+Status Mpu6500::init() {
+    uint8_t id{};
+    const Status who_am_i_result = who_am_i(id);
+    if (who_am_i_result != Status::OK)
+        return who_am_i_result;
+    if (id != device::EXPECTED_ID)
+        return Status::ERROR;
+
+    const Status reset_result = bus_.write_reg(reg::PWR_MGMT_1, bits::pwr_mgmt_1::RESET);
+    if (reset_result != Status::OK)
+        return reset_result;
+    wait_(device::RESET_WAIT_MS);
+
+    const Status signal_path_reset_result =
+        bus_.write_reg(reg::SIGNAL_PATH_RESET, bits::signal_path_reset::ALL);
+    if (signal_path_reset_result != Status::OK)
+        return signal_path_reset_result;
+    wait_(device::RESET_WAIT_MS);
+
+    if (!use_i2c_) { // disable I2C if config was stated that SPI is used. If user uses I2C, NACK
+                     // will be a result of following writing.
+        const Status user_ctrl_result = bus_.write_reg(reg::USER_CTRL, bits::user_ctrl::I2C_IF_DIS);
+        if (user_ctrl_result != Status::OK)
+            return user_ctrl_result;
+    }
+
+    const Status normal_mode_result = bus_.write_reg(reg::PWR_MGMT_1, bits::pwr_mgmt_1::NORMAL);
+    if (normal_mode_result != Status::OK)
+        return normal_mode_result;
+
+    const Status set_accel_range_result = set_accel_range(accel_range_);
+    if (set_accel_range_result != Status::OK)
+        return set_accel_range_result;
+
+    const Status set_gyro_range_result = set_gyro_range(gyro_range_);
+    if (set_gyro_range_result != Status::OK) {
+        return set_gyro_range_result;
+    }
+    return Status::OK;
+}
+
+AccelRange Mpu6500::accel_range() const {
+    return accel_range_;
+}
+
+GyroRange Mpu6500::gyro_range() const {
+    return gyro_range_;
+}
+
+Status Mpu6500::set_accel_range(AccelRange range) {
+    const Status set_accel_range_result =
+        bus_.write_reg(reg::ACCEL_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
+    if (set_accel_range_result != Status::OK)
+        return set_accel_range_result;
+    accel_range_ = range;
+    return Status::OK;
+}
+
+Status Mpu6500::set_gyro_range(GyroRange range) {
+    const Status set_gyro_range_result =
+        bus_.write_reg(reg::GYRO_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
+    if (set_gyro_range_result != Status::OK)
+        return set_gyro_range_result;
+    gyro_range_ = range;
+    return Status::OK;
+}
+
+Status Mpu6500::read_all(Sample& sample) const {
+    std::array<uint8_t, layout::BURST_SIZE> sample_buffer{};
+    const Status read_all_result = bus_.read_regs(reg::ACCEL_XOUT_H, sample_buffer);
+    if (read_all_result != Status::OK)
+        return read_all_result;
+    // fill acceleration
+    const float acc_scale = accel_range_to_scale(accel_range_);
+
+    sample.accel_g = decode_vec3(
+        std::span{sample_buffer}.subspan<layout::ACCEL_OFFSET, layout::VEC3_SIZE>(), acc_scale);
+    // fill temperature
+
+    const int16_t temp = to_int16(sample_buffer, layout::TEMP_OFFSET);
+
+    sample.temperature_c = temp / scale::TEMP_SENSITIVITY + scale::TEMP_REFERENCE_C;
+    // fill gyro
+
+    const float gyro_scale = gyro_range_to_scale(gyro_range_);
+
+    sample.gyro_dps = decode_vec3(
+        std::span{sample_buffer}.subspan<layout::GYRO_OFFSET, layout::VEC3_SIZE>(), gyro_scale);
+
+    return Status::OK;
+}
 } // namespace mpu6500
