@@ -12,7 +12,7 @@
 #include <span>
 namespace {
 int16_t to_int16(std::span<uint8_t> data, uint8_t start_pos) {
-    return (data[start_pos] << 8) + data[start_pos + 1];
+    return static_cast<int16_t>((data[start_pos] << 8) | data[start_pos + 1]);
 }
 
 float accel_range_to_scale(mpu6500::AccelRange range) {
@@ -119,7 +119,7 @@ GyroRange Mpu6500::gyro_range() const {
 
 Status Mpu6500::set_accel_range(AccelRange range) {
     const Status set_accel_range_result =
-        bus_.write_reg(reg::ACCEL_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel ::SHIFT);
+        bus_.write_reg(reg::ACCEL_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
     if (set_accel_range_result != Status::OK)
         return set_accel_range_result;
     accel_range_ = range;
@@ -128,7 +128,7 @@ Status Mpu6500::set_accel_range(AccelRange range) {
 
 Status Mpu6500::set_gyro_range(GyroRange range) {
     const Status set_gyro_range_result =
-        bus_.write_reg(reg::GYRO_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel ::SHIFT);
+        bus_.write_reg(reg::GYRO_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
     if (set_gyro_range_result != Status::OK)
         return set_gyro_range_result;
     gyro_range_ = range;
@@ -143,7 +143,8 @@ Status Mpu6500::read_all(Sample& sample) const {
     // fill acceleration
     const float acc_scale = accel_range_to_scale(accel_range_);
 
-    sample.accel_g = decode_vec3(std::span{sample_buffer}.subspan<0, 6>(), acc_scale);
+    sample.accel_g = decode_vec3(
+        std::span{sample_buffer}.subspan<layout::ACCEL_OFFSET, layout::VEC3_SIZE>(), acc_scale);
     // fill temperature
 
     const int16_t temp = to_int16(sample_buffer, layout::TEMP_OFFSET);
@@ -153,7 +154,8 @@ Status Mpu6500::read_all(Sample& sample) const {
 
     const float gyro_scale = gyro_range_to_scale(gyro_range_);
 
-    sample.gyro_dps = decode_vec3(std::span{sample_buffer}.subspan<8, 6>(), gyro_scale);
+    sample.gyro_dps = decode_vec3(
+        std::span{sample_buffer}.subspan<layout::GYRO_OFFSET, layout::VEC3_SIZE>(), gyro_scale);
 
     return Status::OK;
 }
