@@ -67,7 +67,8 @@ namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const Config& config)
     : bus_(bus), wait_(wait), use_i2c_(config.use_i2c),
       accel_range_(config.starting_accelerometer_range),
-      gyro_range_(config.starting_gyroscope_range) {}
+      gyro_range_(config.starting_gyroscope_range), accel_filter_(config.starting_accel_filter),
+      gyro_filter_(config.starting_gyro_filter), sample_divider_(config.starting_sample_divider) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return bus_.read_regs(reg::WHO_AM_I, std::span<uint8_t>(&id, 1));
@@ -111,6 +112,19 @@ Status Mpu6500::init() {
     if (set_gyro_range_result != Status::OK) {
         return set_gyro_range_result;
     }
+
+    const Status set_accel_filter_result = set_accel_filter(accel_filter_);
+    if (set_accel_filter_result != Status::OK)
+        return set_accel_filter_result;
+
+    const Status set_gyro_filter_result = set_gyro_filter(gyro_filter_);
+    if (set_gyro_filter_result != Status::OK)
+        return set_gyro_filter_result;
+
+    const Status set_sample_divider_result = set_sample_rate_divider(sample_divider_);
+    if (set_sample_divider_result != Status::OK)
+        return set_sample_divider_result;
+
     return Status::OK;
 }
 
@@ -199,12 +213,37 @@ Status Mpu6500::read_temp(float& sample) const {
 }
 
 Status Mpu6500::set_gyro_filter(GyroFilter filter) {
-    return bus_.write_reg(reg::CONFIG, static_cast<uint8_t>(filter));
+    Status set_gyro_filter_result = bus_.write_reg(reg::CONFIG, static_cast<uint8_t>(filter));
+    if (set_gyro_filter_result != Status::OK)
+        return set_gyro_filter_result;
+    gyro_filter_ = filter;
+    return Status::OK;
 }
 Status Mpu6500::set_accel_filter(AccelFilter filter) {
-    return bus_.write_reg(reg::ACCEL_CONFIG2, static_cast<uint8_t>(filter));
+    Status set_accel_filter_result =
+        bus_.write_reg(reg::ACCEL_CONFIG2, static_cast<uint8_t>(filter));
+    if (set_accel_filter_result != Status::OK) {
+        return set_accel_filter_result;
+    }
+    accel_filter_ = filter;
+    return Status::OK;
 }
 Status Mpu6500::set_sample_rate_divider(uint8_t divider) {
-    return bus_.write_reg(reg::SMPLRT_DIV, divider);
+    Status set_sample_divider_result = bus_.write_reg(reg::SMPLRT_DIV, divider);
+    if (set_sample_divider_result != Status::OK) {
+        return set_sample_divider_result;
+    }
+    sample_divider_ = divider;
+    return Status::OK;
+}
+
+GyroFilter Mpu6500::gyro_filter() const {
+    return gyro_filter_;
+}
+AccelFilter Mpu6500::accel_filter() const {
+    return accel_filter_;
+}
+uint8_t Mpu6500::sample_divider() const {
+    return sample_divider_;
 }
 } // namespace mpu6500
