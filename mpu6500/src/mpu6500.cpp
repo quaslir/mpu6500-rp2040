@@ -56,6 +56,11 @@ mpu6500::Vec3 decode_vec3(std::span<uint8_t, 6> sample_buffer, float scale) {
 
     return vec3;
 }
+float decode_temperature(std::span<uint8_t, mpu6500::layout::TEMP_SIZE> sample_buffer) {
+    const int16_t temp = to_int16(sample_buffer, 0);
+
+    return temp / mpu6500::scale::TEMP_SENSITIVITY + mpu6500::scale::TEMP_REFERENCE_C;
+}
 } // namespace
 
 namespace mpu6500 {
@@ -147,9 +152,8 @@ Status Mpu6500::read_all(Sample& sample) const {
         std::span{sample_buffer}.subspan<layout::ACCEL_OFFSET, layout::VEC3_SIZE>(), acc_scale);
     // fill temperature
 
-    const int16_t temp = to_int16(sample_buffer, layout::TEMP_OFFSET);
-
-    sample.temperature_c = temp / scale::TEMP_SENSITIVITY + scale::TEMP_REFERENCE_C;
+    sample.temperature_c = decode_temperature(
+        std::span{sample_buffer}.subspan<layout::TEMP_OFFSET, layout::TEMP_SIZE>());
     // fill gyro
 
     const float gyro_scale = gyro_range_to_scale(gyro_range_);
@@ -157,6 +161,40 @@ Status Mpu6500::read_all(Sample& sample) const {
     sample.gyro_dps = decode_vec3(
         std::span{sample_buffer}.subspan<layout::GYRO_OFFSET, layout::VEC3_SIZE>(), gyro_scale);
 
+    return Status::OK;
+}
+
+Status Mpu6500::read_accel(Vec3& sample) const {
+    std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
+    const Status read_accel_result = bus_.read_regs(reg::ACCEL_XOUT_H, sample_buffer);
+    if (read_accel_result != Status::OK)
+        return read_accel_result;
+
+    const float acc_scale = accel_range_to_scale(accel_range_);
+
+    sample = decode_vec3(sample_buffer, acc_scale);
+
+    return Status::OK;
+}
+Status Mpu6500::read_gyro(Vec3& sample) const {
+    std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
+    const Status read_gyro_result = bus_.read_regs(reg::GYRO_XOUT_H, sample_buffer);
+    if (read_gyro_result != Status::OK)
+        return read_gyro_result;
+
+    const float gyro_scale = gyro_range_to_scale(gyro_range_);
+
+    sample = decode_vec3(sample_buffer, gyro_scale);
+
+    return Status::OK;
+}
+Status Mpu6500::read_temp(float& sample) const {
+    std::array<uint8_t, layout::TEMP_SIZE> sample_buffer{};
+    const Status read_temp_result = bus_.read_regs(reg::TEMP_OUT_H, sample_buffer);
+    if (read_temp_result != Status::OK)
+        return read_temp_result;
+
+    sample = decode_temperature(sample_buffer);
     return Status::OK;
 }
 } // namespace mpu6500

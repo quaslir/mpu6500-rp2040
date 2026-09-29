@@ -40,6 +40,10 @@ public:
     [[nodiscard]] GyroRange gyro_range() const;
     [[nodiscard]] Status read_all(Sample& sample) const;
 
+    [[nodiscard]] Status read_accel(Vec3& sample) const;
+    [[nodiscard]] Status read_gyro(Vec3& sample) const;
+    [[nodiscard]] Status read_temp(float& sample) const;
+
 private:
     bus::Bus& bus_;
     WaitFunction wait_;
