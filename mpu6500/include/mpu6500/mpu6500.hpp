@@ -9,6 +9,18 @@ enum class AccelRange : uint8_t { G2 = 0, G4 = 1, G8 = 2, G16 = 3 };
 
 enum class GyroRange : uint8_t { Dps250 = 0, Dps500 = 1, Dps1000 = 2, Dps2000 = 3 };
 
+enum class GyroFilter : uint8_t { Hz184 = 1, Hz92 = 2, Hz41 = 3, Hz20 = 4, Hz10 = 5, Hz5 = 6 };
+
+enum class AccelFilter : uint8_t {
+    Hz460 = 0,
+    Hz184 = 1,
+    Hz92 = 2,
+    Hz41 = 3,
+    Hz20 = 4,
+    Hz10 = 5,
+    Hz5 = 6
+};
+
 struct Config {
     bool use_i2c = true;
     AccelRange starting_accelerometer_range = AccelRange::G2;
@@ -39,10 +51,15 @@ public:
     [[nodiscard]] AccelRange accel_range() const;
     [[nodiscard]] GyroRange gyro_range() const;
     [[nodiscard]] Status read_all(Sample& sample) const;
-
+    // Measurement
     [[nodiscard]] Status read_accel(Vec3& sample) const;
     [[nodiscard]] Status read_gyro(Vec3& sample) const;
     [[nodiscard]] Status read_temp(float& sample) const;
+
+    // Filters
+    [[nodiscard]] Status set_gyro_filter(GyroFilter filter);
+    [[nodiscard]] Status set_accel_filter(AccelFilter filter);
+    [[nodiscard]] Status set_sample_rate_divider(uint8_t divider);
 
 private:
     bus::Bus& bus_;

@@ -197,4 +197,14 @@ Status Mpu6500::read_temp(float& sample) const {
     sample = decode_temperature(sample_buffer);
     return Status::OK;
 }
+
+Status Mpu6500::set_gyro_filter(GyroFilter filter) {
+    return bus_.write_reg(reg::CONFIG, static_cast<uint8_t>(filter));
+}
+Status Mpu6500::set_accel_filter(AccelFilter filter) {
+    return bus_.write_reg(reg::ACCEL_CONFIG2, static_cast<uint8_t>(filter));
+}
+Status Mpu6500::set_sample_rate_divider(uint8_t divider) {
+    return bus_.write_reg(reg::SMPLRT_DIV, divider);
+}
 } // namespace mpu6500
