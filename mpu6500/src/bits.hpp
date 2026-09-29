@@ -30,4 +30,16 @@ inline constexpr uint8_t SHIFT{3};
 inline constexpr uint8_t MASK{0x18};
 } // namespace fs_sel
 
+namespace config {
+inline constexpr uint8_t DLPF_CFG_MASK{0x07};      // bits 2:0, gyro/temp filter
+inline constexpr uint8_t EXT_SYNC_SET_MASK{0x38};  // bits 5:3, FSYNC (unused, keep 0)
+inline constexpr uint8_t FIFO_MODE{0x40};          // bit 6 (unused, keep 0)
+} // namespace config
+
+namespace accel_config2 {
+inline constexpr uint8_t A_DLPF_CFG_MASK{0x07};    // bits 2:0, accel filter
+inline constexpr uint8_t ACCEL_FCHOICE_B{0x08};    // bit 3, must be 0 or the filter is bypassed
+} // namespace accel_config2
+
+
 } // namespace mpu6500::bits
