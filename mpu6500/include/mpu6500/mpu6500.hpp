@@ -51,17 +51,29 @@ public:
     void clear_offsets();
 
     // Calibration
+    [[nodiscard]] Status measure_mean(calibration::Sensor sensor,
+                                      Vec3& mean,
+                                      const calibration::MeasureOptions& options) const;
+    [[nodiscard]] Status measure_gyro_offset(
+        Vec3& offset,
+        const calibration::MeasureOptions& options = calibration::DEFAULT_GYRO_OPTIONS) const;
     [[nodiscard]] Status
-    measure_gyro_offset(Vec3& offset,
-                        uint16_t samples = calibration::DEFAULT_GYRO_SAMPLES,
-                        float max_spread_dps = calibration::DEFAULT_GYRO_MAX_SPREAD_DPS,
-                        uint16_t warmup_samples = calibration::DEFAULT_GYRO_WARMUP_SAMPLES) const;
-    [[nodiscard]] Status
-    calibrate_gyro(uint16_t samples = calibration::DEFAULT_GYRO_SAMPLES,
-                   float max_spread_dps = calibration::DEFAULT_GYRO_MAX_SPREAD_DPS,
-                   uint16_t warmup_samples = calibration::DEFAULT_GYRO_WARMUP_SAMPLES);
+    calibrate_gyro(const calibration::MeasureOptions& options = calibration::DEFAULT_GYRO_OPTIONS);
+
+    [[nodiscard]] Status measure_accel_offset(
+        Vec3& offset,
+        const Vec3& expected_gravity_g = calibration::GRAVITY_Z_UP,
+        const calibration::MeasureOptions& options = calibration::DEFAULT_ACCEL_OPTIONS) const;
+    [[nodiscard]] Status calibrate_accel(
+        const Vec3& expected_gravity_g = calibration::GRAVITY_Z_UP,
+        const calibration::MeasureOptions& options = calibration::DEFAULT_ACCEL_OPTIONS);
 
 private:
+    using ReadVec3Fn = Status (Mpu6500::*)(Vec3&) const;
+    [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,
+                                           Vec3& mean,
+                                           const calibration::MeasureOptions& options) const;
+
     bus::Bus& bus_;
     WaitFunction wait_;
     bool use_i2c_;
