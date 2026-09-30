@@ -7,6 +7,7 @@
 #include "sample.hpp"
 #include "vec3.hpp"
 #include <cstdint>
+#include <pico/types.h>
 namespace mpu6500 {
 
 using WaitFunction = void (*)(uint32_t delay_ms);
@@ -73,7 +74,7 @@ private:
     [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,
                                            Vec3& mean,
                                            const calibration::MeasureOptions& options) const;
-
+    [[nodiscard]] Status update_bits(uint8_t reg, uint8_t mask, uint8_t data);
     bus::Bus& bus_;
     WaitFunction wait_;
     bool use_i2c_;

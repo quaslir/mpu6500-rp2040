@@ -41,4 +41,10 @@ inline constexpr uint8_t A_DLPF_CFG_MASK{0x07}; // bits 2:0, accel filter
 inline constexpr uint8_t ACCEL_FCHOICE_B{0x08}; // bit 3, must be 0 or the filter is bypassed
 } // namespace accel_config2
 
+namespace gyro_config {
+inline constexpr uint8_t FCHOICE_B_MASK{0x03};
+inline constexpr uint8_t FCHOICE_B_BYPASS_8800HZ{0x01};
+inline constexpr uint8_t FCHOICE_B_BYPASS_3600HZ{0x02};
+inline constexpr uint8_t FCHOICE_B_USE_DLPF{0x00};
+} // namespace gyro_config
 } // namespace mpu6500::bits
