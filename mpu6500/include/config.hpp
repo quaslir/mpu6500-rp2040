@@ -30,6 +30,17 @@ enum class AccelFilter : uint8_t {
     Hz5 = 6,
     Bypass1130Hz = 8
 };
+
+enum class ClockSource : uint8_t { Internal20MHz = 0, Auto = 1, Stopped = 7 };
+struct EnabledAxes {
+    bool accel_x = true;
+    bool accel_y = true;
+    bool accel_z = true;
+    bool gyro_x = true;
+    bool gyro_y = true;
+    bool gyro_z = true;
+};
+
 struct Config {
     bool use_i2c = true;
     AccelRange starting_accelerometer_range = AccelRange::G2;
@@ -39,6 +50,10 @@ struct Config {
     uint8_t starting_sample_divider = 0;
     Vec3 starting_accel_offset{};
     Vec3 starting_gyro_offset{};
+    ClockSource starting_clock_source{};
+    EnabledAxes starting_enabled_axes{};
+    bool starting_temperature_enabled{};
+    bool starting_gyro_standby{};
 };
 
 } // namespace mpu6500::config

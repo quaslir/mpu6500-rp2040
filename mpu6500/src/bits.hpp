@@ -5,14 +5,34 @@
 namespace mpu6500::bits {
 
 namespace pwr_mgmt_1 {
-inline constexpr uint8_t DEVICE_RESET{0x80};
-inline constexpr uint8_t SLEEP{0x40};
-inline constexpr uint8_t CLKSEL_MASK{0x07};
-inline constexpr uint8_t CLKSEL_AUTO{0x01};
+inline constexpr uint8_t DEVICE_RESET{0x80}; // bit 7, auto-clears
+inline constexpr uint8_t SLEEP{0x40};        // bit 6
+inline constexpr uint8_t CYCLE{0x20};        // bit 5, for low-power mode later
+inline constexpr uint8_t GYRO_STANDBY{0x10}; // bit 4
+inline constexpr uint8_t TEMP_DIS{0x08};     // bit 3, 1 = temperature sensor off
+
+inline constexpr uint8_t CLKSEL_MASK{0x07};     // bits 2:0
+inline constexpr uint8_t CLKSEL_INTERNAL{0x00}; // internal 20 MHz oscillator
+inline constexpr uint8_t CLKSEL_AUTO{0x01};     // PLL if ready, else internal
+inline constexpr uint8_t CLKSEL_STOP{0x07};     // clock stopped, chip does nothing
 
 inline constexpr uint8_t RESET{DEVICE_RESET};
 inline constexpr uint8_t NORMAL{CLKSEL_AUTO};
 } // namespace pwr_mgmt_1
+
+namespace pwr_mgmt_2 {
+// 1 = axis disabled, 0 = axis enabled
+inline constexpr uint8_t DIS_XA{0x20}; // bit 5
+inline constexpr uint8_t DIS_YA{0x10}; // bit 4
+inline constexpr uint8_t DIS_ZA{0x08}; // bit 3
+inline constexpr uint8_t DIS_XG{0x04}; // bit 2
+inline constexpr uint8_t DIS_YG{0x02}; // bit 1
+inline constexpr uint8_t DIS_ZG{0x01}; // bit 0
+
+inline constexpr uint8_t DIS_ACCEL_MASK{DIS_XA | DIS_YA | DIS_ZA};     // 0x38
+inline constexpr uint8_t DIS_GYRO_MASK{DIS_XG | DIS_YG | DIS_ZG};      // 0x07
+inline constexpr uint8_t DIS_ALL_MASK{DIS_ACCEL_MASK | DIS_GYRO_MASK}; // 0x3F, bits 7:6 untouched
+} // namespace pwr_mgmt_2
 
 namespace signal_path_reset {
 inline constexpr uint8_t GYRO{0x04};
@@ -47,4 +67,5 @@ inline constexpr uint8_t FCHOICE_B_BYPASS_8800HZ{0x01};
 inline constexpr uint8_t FCHOICE_B_BYPASS_3600HZ{0x02};
 inline constexpr uint8_t FCHOICE_B_USE_DLPF{0x00};
 } // namespace gyro_config
+
 } // namespace mpu6500::bits

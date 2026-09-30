@@ -25,6 +25,7 @@ inline constexpr uint8_t GYRO_ZOUT_L{0x48};
 inline constexpr uint8_t SIGNAL_PATH_RESET{0x68};
 inline constexpr uint8_t USER_CTRL{0x6A};
 inline constexpr uint8_t PWR_MGMT_1{0x6B};
+inline constexpr uint8_t PWR_MGMT_2{0x6C};
 inline constexpr uint8_t WHO_AM_I{0x75};
 
 // Filters

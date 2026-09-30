@@ -73,7 +73,11 @@ Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
       accel_range_(config.starting_accelerometer_range),
       gyro_range_(config.starting_gyroscope_range), accel_filter_(config.starting_accel_filter),
       gyro_filter_(config.starting_gyro_filter), sample_divider_(config.starting_sample_divider),
-      accel_offset_(config.starting_accel_offset), gyro_offset_(config.starting_gyro_offset) {}
+      accel_offset_(config.starting_accel_offset), gyro_offset_(config.starting_gyro_offset),
+      sleeping_(false), clock_source_(config.starting_clock_source),
+      enabled_axes_(config.starting_enabled_axes),
+      temperature_enabled_(config.starting_temperature_enabled),
+      gyro_standby_(config.starting_gyro_standby) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return bus_.read_regs(reg::WHO_AM_I, std::span<uint8_t>(&id, 1));
@@ -108,6 +112,26 @@ Status Mpu6500::init() {
     const Status normal_mode_result = bus_.write_reg(reg::PWR_MGMT_1, bits::pwr_mgmt_1::NORMAL);
     if (normal_mode_result != Status::OK)
         return normal_mode_result;
+
+    const Status set_sleeping_result = set_sleep(sleeping_);
+    if (set_sleeping_result != Status::OK)
+        return set_sleeping_result;
+
+    const Status set_clock_source_result = set_clock_source(clock_source_);
+    if (set_clock_source_result != Status::OK)
+        return set_clock_source_result;
+
+    const Status set_temperature_enabled_result = set_temperature_enabled(temperature_enabled_);
+    if (set_temperature_enabled_result != Status::OK)
+        return set_temperature_enabled_result;
+
+    const Status set_gyro_standby_result = set_gyro_standby(gyro_standby_);
+    if (set_gyro_standby_result != Status::OK)
+        return set_gyro_standby_result;
+
+    const Status set_enabled_axes_result = set_enabled_axes(enabled_axes_);
+    if (set_enabled_axes_result != Status::OK)
+        return set_enabled_axes_result;
 
     const Status set_accel_range_result = set_accel_range(accel_range_);
     if (set_accel_range_result != Status::OK)
@@ -258,9 +282,11 @@ Status Mpu6500::set_gyro_filter(config::GyroFilter filter) {
     switch (filter) {
         case config::GyroFilter::Bypass3600Hz:
         case config::GyroFilter::Bypass8800Hz: {
-            const uint8_t data = filter == config::GyroFilter::Bypass3600Hz ? bits::gyro_config::FCHOICE_B_BYPASS_3600HZ : bits::gyro_config::FCHOICE_B_BYPASS_8800HZ;
-            const Status set_gyro_bypass_result = update_bits(
-                reg::GYRO_CONFIG, bits::gyro_config::FCHOICE_B_MASK, data);
+            const uint8_t data = filter == config::GyroFilter::Bypass3600Hz
+                                     ? bits::gyro_config::FCHOICE_B_BYPASS_3600HZ
+                                     : bits::gyro_config::FCHOICE_B_BYPASS_8800HZ;
+            const Status set_gyro_bypass_result =
+                update_bits(reg::GYRO_CONFIG, bits::gyro_config::FCHOICE_B_MASK, data);
             if (set_gyro_bypass_result != Status::OK)
                 return set_gyro_bypass_result;
             break;
@@ -284,8 +310,10 @@ Status Mpu6500::set_gyro_filter(config::GyroFilter filter) {
     return Status::OK;
 }
 Status Mpu6500::set_accel_filter(config::AccelFilter filter) {
-    const Status set_accel_filter_result = update_bits(
-        reg::ACCEL_CONFIG2, bits::accel_config2::A_DLPF_CFG_MASK | bits::accel_config2::ACCEL_FCHOICE_B, static_cast<uint8_t>(filter));
+    const Status set_accel_filter_result =
+        update_bits(reg::ACCEL_CONFIG2,
+                    bits::accel_config2::A_DLPF_CFG_MASK | bits::accel_config2::ACCEL_FCHOICE_B,
+                    static_cast<uint8_t>(filter));
     if (set_accel_filter_result != Status::OK) {
         return set_accel_filter_result;
     }
@@ -438,5 +466,88 @@ Status Mpu6500::calibrate_accel(const Vec3& expected_gravity_g,
 
     set_accel_offset(offset);
     return Status::OK;
+}
+
+Status Mpu6500::set_sleep(bool enabled) {
+    const Status set_sleep_result = update_bits(
+        reg::PWR_MGMT_1, bits::pwr_mgmt_1::SLEEP, enabled ? bits::pwr_mgmt_1::SLEEP : 0);
+
+    if (set_sleep_result != Status::OK)
+        return set_sleep_result;
+
+    sleeping_ = enabled;
+    return Status::OK;
+}
+Status Mpu6500::set_gyro_standby(bool enabled) {
+    const Status set_gyro_standby_result =
+        update_bits(reg::PWR_MGMT_1,
+                    bits::pwr_mgmt_1::GYRO_STANDBY,
+                    enabled ? bits::pwr_mgmt_1::GYRO_STANDBY : 0);
+
+    if (set_gyro_standby_result != Status::OK)
+        return set_gyro_standby_result;
+
+    gyro_standby_ = enabled;
+    return Status::OK;
+}
+Status Mpu6500::set_temperature_enabled(bool enabled) {
+    const Status set_temperature_result = update_bits(
+        reg::PWR_MGMT_1, bits::pwr_mgmt_1::TEMP_DIS, enabled ? 0 : bits::pwr_mgmt_1::TEMP_DIS);
+
+    if (set_temperature_result != Status::OK)
+        return set_temperature_result;
+
+    temperature_enabled_ = enabled;
+    return Status::OK;
+}
+Status Mpu6500::set_clock_source(config::ClockSource source) {
+    const Status set_clock_result =
+        update_bits(reg::PWR_MGMT_1, bits::pwr_mgmt_1::CLKSEL_MASK, static_cast<uint8_t>(source));
+
+    if (set_clock_result != Status::OK)
+        return set_clock_result;
+
+    clock_source_ = source;
+    return Status::OK;
+}
+Status Mpu6500::set_enabled_axes(const config::EnabledAxes& enabled) {
+    uint8_t disabled_bits{};
+    if (!enabled.accel_x)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_XA;
+    if (!enabled.accel_y)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_YA;
+    if (!enabled.accel_z)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_ZA;
+    if (!enabled.gyro_x)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_XG;
+    if (!enabled.gyro_y)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_YG;
+    if (!enabled.gyro_z)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_ZG;
+
+    const Status set_axes_result =
+        update_bits(reg::PWR_MGMT_2, bits::pwr_mgmt_2::DIS_ALL_MASK, disabled_bits);
+
+    if (set_axes_result != Status::OK)
+        return set_axes_result;
+
+    enabled_axes_ = enabled;
+    return Status::OK;
+}
+
+bool Mpu6500::is_sleeping() const {
+    return sleeping_;
+}
+bool Mpu6500::gyro_standby() const {
+    return gyro_standby_;
+}
+bool Mpu6500::temperature_enabled() const {
+    return temperature_enabled_;
+}
+config::ClockSource Mpu6500::clock_source() const {
+    return clock_source_;
+}
+config::EnabledAxes Mpu6500::enabled_axes() const {
+    return enabled_axes_;
 }
 } // namespace mpu6500
