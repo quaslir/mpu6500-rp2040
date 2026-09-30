@@ -4,6 +4,7 @@
 #include "bus/status.hpp"
 #include "calibration.hpp"
 #include "config.hpp"
+#include "mpu6500/detail/mpu6500_registers.hpp"
 #include "sample.hpp"
 #include "vec3.hpp"
 #include <cstdint>
@@ -85,8 +86,7 @@ private:
     [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,
                                            Vec3& mean,
                                            const calibration::MeasureOptions& options) const;
-    [[nodiscard]] Status update_bits(uint8_t reg, uint8_t mask, uint8_t data);
-    bus::Bus& bus_;
+    detail::Mpu6500Regs regs_;
     WaitFunction wait_;
     bool use_i2c_;
     config::AccelRange accel_range_;

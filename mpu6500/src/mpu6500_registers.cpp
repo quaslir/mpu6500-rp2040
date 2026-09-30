@@ -1,0 +1,134 @@
+#include "mpu6500/detail/mpu6500_registers.hpp"
+
+#include "bits.hpp"
+#include "bus/bus.hpp"
+#include "registers.hpp"
+#include <cstdint>
+#include <span>
+namespace mpu6500::detail {
+
+Mpu6500Regs::Mpu6500Regs(bus::Bus& bus) : bus_(bus) {}
+
+Status Mpu6500Regs::update_bits(uint8_t reg, uint8_t mask, uint8_t data) {
+    uint8_t current{};
+    const Status read_current_result = bus_.read_regs(reg, std::span<uint8_t>(&current, 1));
+    if (read_current_result != Status::OK) {
+        return read_current_result;
+    }
+    const uint8_t updated = static_cast<uint8_t>((current & ~mask) | (data & mask));
+    return bus_.write_reg(reg, updated);
+}
+
+Status Mpu6500Regs::read_who_am_i(uint8_t& id) const {
+    return bus_.read_regs(reg::WHO_AM_I, std::span<uint8_t>(&id, 1));
+}
+Status Mpu6500Regs::device_reset() {
+    return bus_.write_reg(reg::PWR_MGMT_1, bits::pwr_mgmt_1::DEVICE_RESET);
+}
+Status Mpu6500Regs::signal_path_reset() {
+    return bus_.write_reg(reg::SIGNAL_PATH_RESET, bits::signal_path_reset::ALL);
+}
+Status Mpu6500Regs::disable_i2c_interface() {
+    return update_bits(reg::USER_CTRL, bits::user_ctrl::I2C_IF_DIS, bits::user_ctrl::I2C_IF_DIS);
+}
+Status Mpu6500Regs::write_power_normal() {
+    return bus_.write_reg(reg::PWR_MGMT_1, bits::pwr_mgmt_1::NORMAL);
+}
+
+Status Mpu6500Regs::write_accel_range(config::AccelRange range) {
+    return update_bits(
+        reg::ACCEL_CONFIG, bits::fs_sel::MASK, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
+}
+Status Mpu6500Regs::write_gyro_range(config::GyroRange range) {
+    return update_bits(
+        reg::GYRO_CONFIG, bits::fs_sel::MASK, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
+}
+Status Mpu6500Regs::write_accel_filter(config::AccelFilter filter) {
+    return update_bits(reg::ACCEL_CONFIG2,
+                       bits::accel_config2::A_DLPF_CFG_MASK | bits::accel_config2::ACCEL_FCHOICE_B,
+                       static_cast<uint8_t>(filter));
+}
+Status Mpu6500Regs::write_gyro_filter(config::GyroFilter filter) {
+    switch (filter) {
+        case config::GyroFilter::Bypass3600Hz:
+        case config::GyroFilter::Bypass8800Hz: {
+            const uint8_t data = filter == config::GyroFilter::Bypass3600Hz
+                                     ? bits::gyro_config::FCHOICE_B_BYPASS_3600HZ
+                                     : bits::gyro_config::FCHOICE_B_BYPASS_8800HZ;
+            const Status set_gyro_bypass_result =
+                update_bits(reg::GYRO_CONFIG, bits::gyro_config::FCHOICE_B_MASK, data);
+            if (set_gyro_bypass_result != Status::OK)
+                return set_gyro_bypass_result;
+            break;
+        }
+        default: {
+            const Status set_gyro_bypass_result =
+                update_bits(reg::GYRO_CONFIG,
+                            bits::gyro_config::FCHOICE_B_MASK,
+                            bits::gyro_config::FCHOICE_B_USE_DLPF);
+            if (set_gyro_bypass_result != Status::OK)
+                return set_gyro_bypass_result;
+            const Status set_gyro_filter_result =
+                update_bits(reg::CONFIG, bits::config::DLPF_CFG_MASK, static_cast<uint8_t>(filter));
+            if (set_gyro_filter_result != Status::OK) {
+                return set_gyro_filter_result;
+            }
+            break;
+        }
+    }
+
+    return Status::OK;
+}
+Status Mpu6500Regs::write_sample_rate_divider(uint8_t divider) {
+    return bus_.write_reg(reg::SMPLRT_DIV, divider);
+}
+
+Status Mpu6500Regs::write_sleep(bool enabled) {
+    return update_bits(
+        reg::PWR_MGMT_1, bits::pwr_mgmt_1::SLEEP, enabled ? bits::pwr_mgmt_1::SLEEP : 0);
+}
+Status Mpu6500Regs::write_gyro_standby(bool enabled) {
+    return update_bits(reg::PWR_MGMT_1,
+                       bits::pwr_mgmt_1::GYRO_STANDBY,
+                       enabled ? bits::pwr_mgmt_1::GYRO_STANDBY : 0);
+}
+Status Mpu6500Regs::write_temperature_enabled(bool enabled) {
+    return update_bits(
+        reg::PWR_MGMT_1, bits::pwr_mgmt_1::TEMP_DIS, enabled ? 0 : bits::pwr_mgmt_1::TEMP_DIS);
+}
+Status Mpu6500Regs::write_clock_source(config::ClockSource source) {
+    return update_bits(
+        reg::PWR_MGMT_1, bits::pwr_mgmt_1::CLKSEL_MASK, static_cast<uint8_t>(source));
+}
+Status Mpu6500Regs::write_enabled_axes(const config::EnabledAxes& enabled) {
+    uint8_t disabled_bits{};
+    if (!enabled.accel_x)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_XA;
+    if (!enabled.accel_y)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_YA;
+    if (!enabled.accel_z)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_ZA;
+    if (!enabled.gyro_x)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_XG;
+    if (!enabled.gyro_y)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_YG;
+    if (!enabled.gyro_z)
+        disabled_bits |= bits::pwr_mgmt_2::DIS_ZG;
+
+    return update_bits(reg::PWR_MGMT_2, bits::pwr_mgmt_2::DIS_ALL_MASK, disabled_bits);
+}
+
+Status Mpu6500Regs::read_burst(std::span<uint8_t, 14> buffer) const {
+    return bus_.read_regs(reg::ACCEL_XOUT_H, buffer);
+}
+Status Mpu6500Regs::read_accel_bytes(std::span<uint8_t, 6> buffer) const {
+    return bus_.read_regs(reg::ACCEL_XOUT_H, buffer);
+}
+Status Mpu6500Regs::read_gyro_bytes(std::span<uint8_t, 6> buffer) const {
+    return bus_.read_regs(reg::GYRO_XOUT_H, buffer);
+}
+Status Mpu6500Regs::read_temp_bytes(std::span<uint8_t, 2> buffer) const {
+    return bus_.read_regs(reg::TEMP_OUT_H, buffer);
+}
+
+} // namespace mpu6500::detail
