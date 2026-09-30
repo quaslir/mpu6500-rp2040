@@ -4,6 +4,7 @@
 #include "bus/status.hpp"
 #include "calibration.hpp"
 #include "config.hpp"
+#include "mpu6500/detail/mpu6500_registers.hpp"
 #include "sample.hpp"
 #include "vec3.hpp"
 #include <cstdint>
@@ -68,14 +69,24 @@ public:
     [[nodiscard]] Status calibrate_accel(
         const Vec3& expected_gravity_g = calibration::GRAVITY_Z_UP,
         const calibration::MeasureOptions& options = calibration::DEFAULT_ACCEL_OPTIONS);
+    [[nodiscard]] Status set_sleep(bool enabled);
+    [[nodiscard]] Status set_gyro_standby(bool enabled);
+    [[nodiscard]] Status set_temperature_enabled(bool enabled);
+    [[nodiscard]] Status set_clock_source(config::ClockSource source);
+    [[nodiscard]] Status set_enabled_axes(const config::EnabledAxes& enabled);
+
+    [[nodiscard]] bool is_sleeping() const;
+    [[nodiscard]] bool gyro_standby() const;
+    [[nodiscard]] bool temperature_enabled() const;
+    [[nodiscard]] config::ClockSource clock_source() const;
+    [[nodiscard]] config::EnabledAxes enabled_axes() const;
 
 private:
     using ReadVec3Fn = Status (Mpu6500::*)(Vec3&) const;
     [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,
                                            Vec3& mean,
                                            const calibration::MeasureOptions& options) const;
-    [[nodiscard]] Status update_bits(uint8_t reg, uint8_t mask, uint8_t data);
-    bus::Bus& bus_;
+    detail::Mpu6500Regs regs_;
     WaitFunction wait_;
     bool use_i2c_;
     config::AccelRange accel_range_;
@@ -85,5 +96,11 @@ private:
     uint8_t sample_divider_;
     Vec3 accel_offset_;
     Vec3 gyro_offset_;
+    bool sleeping_;
+    config::ClockSource clock_source_;
+    config::EnabledAxes enabled_axes_;
+    bool temperature_enabled_;
+
+    bool gyro_standby_;
 };
 } // namespace mpu6500

@@ -1,5 +1,6 @@
 add_library(mpu6500 STATIC
     src/mpu6500.cpp
+    src/mpu6500_registers.cpp
 )
 
 target_include_directories(mpu6500
