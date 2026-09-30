@@ -7,9 +7,9 @@
 #include "device.hpp"
 #include "layout.hpp"
 #include "registers.hpp"
+#include "sample.hpp"
 #include "scales.hpp"
 #include "vec3.hpp"
-#include "sample.hpp"
 #include <array>
 #include <cstdint>
 #include <span>
@@ -70,7 +70,8 @@ Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
     : bus_(bus), wait_(wait), use_i2c_(config.use_i2c),
       accel_range_(config.starting_accelerometer_range),
       gyro_range_(config.starting_gyroscope_range), accel_filter_(config.starting_accel_filter),
-      gyro_filter_(config.starting_gyro_filter), sample_divider_(config.starting_sample_divider) {}
+      gyro_filter_(config.starting_gyro_filter), sample_divider_(config.starting_sample_divider),
+      accel_offset_(config.starting_accel_offset), gyro_offset_(config.starting_gyro_offset) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return bus_.read_regs(reg::WHO_AM_I, std::span<uint8_t>(&id, 1));
@@ -156,7 +157,7 @@ Status Mpu6500::set_gyro_range(config::GyroRange range) {
     return Status::OK;
 }
 
-Status Mpu6500::read_all(Sample& sample) const {
+Status Mpu6500::read_all_raw(Sample& sample) const {
     std::array<uint8_t, layout::BURST_SIZE> sample_buffer{};
     const Status read_all_result = bus_.read_regs(reg::ACCEL_XOUT_H, sample_buffer);
     if (read_all_result != Status::OK)
@@ -180,7 +181,7 @@ Status Mpu6500::read_all(Sample& sample) const {
     return Status::OK;
 }
 
-Status Mpu6500::read_accel(Vec3& sample) const {
+Status Mpu6500::read_accel_raw(Vec3& sample) const {
     std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
     const Status read_accel_result = bus_.read_regs(reg::ACCEL_XOUT_H, sample_buffer);
     if (read_accel_result != Status::OK)
@@ -192,7 +193,7 @@ Status Mpu6500::read_accel(Vec3& sample) const {
 
     return Status::OK;
 }
-Status Mpu6500::read_gyro(Vec3& sample) const {
+Status Mpu6500::read_gyro_raw(Vec3& sample) const {
     std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
     const Status read_gyro_result = bus_.read_regs(reg::GYRO_XOUT_H, sample_buffer);
     if (read_gyro_result != Status::OK)
@@ -204,6 +205,32 @@ Status Mpu6500::read_gyro(Vec3& sample) const {
 
     return Status::OK;
 }
+
+Status Mpu6500::read_all(Sample& sample) const {
+    const Status read_status = read_all_raw(sample);
+    if (read_status != Status::OK)
+        return read_status;
+    sample.accel_g -= accel_offset_;
+    sample.gyro_dps -= gyro_offset_;
+
+    return Status::OK;
+}
+Status Mpu6500::read_accel(Vec3& sample) const {
+    const Status read_status = read_accel_raw(sample);
+    if (read_status != Status::OK)
+        return read_status;
+    sample -= accel_offset_;
+
+    return Status::OK;
+}
+Status Mpu6500::read_gyro(Vec3& sample) const {
+    const Status read_status = read_gyro_raw(sample);
+    if (read_status != Status::OK)
+        return read_status;
+    sample -= gyro_offset_;
+    return Status::OK;
+}
+
 Status Mpu6500::read_temp(float& sample) const {
     std::array<uint8_t, layout::TEMP_SIZE> sample_buffer{};
     const Status read_temp_result = bus_.read_regs(reg::TEMP_OUT_H, sample_buffer);
@@ -247,5 +274,24 @@ config::AccelFilter Mpu6500::accel_filter() const {
 }
 uint8_t Mpu6500::sample_divider() const {
     return sample_divider_;
+}
+
+void Mpu6500::set_accel_offset(const Vec3& offset) {
+    accel_offset_ = offset;
+}
+void Mpu6500::set_gyro_offset(const Vec3& offset) {
+    gyro_offset_ = offset;
+}
+
+const Vec3& Mpu6500::accel_offset() const {
+    return accel_offset_;
+}
+const Vec3& Mpu6500::gyro_offset() const {
+    return gyro_offset_;
+}
+
+void Mpu6500::clear_offsets() {
+    accel_offset_ = Vec3{};
+    gyro_offset_ = Vec3{};
 }
 } // namespace mpu6500

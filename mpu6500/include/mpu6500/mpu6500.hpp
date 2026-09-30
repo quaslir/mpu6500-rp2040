@@ -3,8 +3,8 @@
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
 #include "config.hpp"
-#include "vec3.hpp"
 #include "sample.hpp"
+#include "vec3.hpp"
 #include <cstdint>
 namespace mpu6500 {
 
@@ -21,11 +21,16 @@ public:
     [[nodiscard]] Status set_gyro_range(config::GyroRange range);
     [[nodiscard]] config::AccelRange accel_range() const;
     [[nodiscard]] config::GyroRange gyro_range() const;
+        // Measurement
     [[nodiscard]] Status read_all(Sample& sample) const;
-    // Measurement
+
     [[nodiscard]] Status read_accel(Vec3& sample) const;
     [[nodiscard]] Status read_gyro(Vec3& sample) const;
     [[nodiscard]] Status read_temp(float& sample) const;
+
+    [[nodiscard]] Status read_all_raw(Sample& sample) const;
+    [[nodiscard]] Status read_accel_raw(Vec3& sample) const;
+    [[nodiscard]] Status read_gyro_raw(Vec3& sample) const;
 
     // Filters
     [[nodiscard]] Status set_gyro_filter(config::GyroFilter filter);
@@ -36,6 +41,13 @@ public:
     [[nodiscard]] config::AccelFilter accel_filter() const;
     [[nodiscard]] uint8_t sample_divider() const;
 
+    // Offset
+    void set_accel_offset(const Vec3& offset);
+    void set_gyro_offset(const Vec3& offset);
+
+    [[nodiscard]] const Vec3& accel_offset() const;
+    [[nodiscard]] const Vec3& gyro_offset() const;
+    void clear_offsets();
 private:
     bus::Bus& bus_;
     WaitFunction wait_;
@@ -45,5 +57,7 @@ private:
     config::AccelFilter accel_filter_;
     config::GyroFilter gyro_filter_;
     uint8_t sample_divider_;
+    Vec3 accel_offset_;
+    Vec3 gyro_offset_;
 };
 } // namespace mpu6500

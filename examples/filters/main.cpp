@@ -61,7 +61,9 @@ struct FilterStep {
 };
 
 constexpr std::array<FilterStep, 7> FILTER_STEPS{{
-    {"widest (gyro 250 / accel 460 Hz)", mpu6500::config::GyroFilter::Hz250, mpu6500::config::AccelFilter::Hz460},
+    {"widest (gyro 250 / accel 460 Hz)",
+     mpu6500::config::GyroFilter::Hz250,
+     mpu6500::config::AccelFilter::Hz460},
     {"184 Hz", mpu6500::config::GyroFilter::Hz184, mpu6500::config::AccelFilter::Hz184},
     {"92 Hz", mpu6500::config::GyroFilter::Hz92, mpu6500::config::AccelFilter::Hz92},
     {"41 Hz", mpu6500::config::GyroFilter::Hz41, mpu6500::config::AccelFilter::Hz41},
@@ -112,7 +114,7 @@ void measure_and_print(mpu6500::Mpu6500& imu, const FilterStep& step) {
     int failed_reads = 0;
 
     for (int i = 0; i < SAMPLES_PER_STEP; ++i) {
-       Sample sample{};
+        Sample sample{};
         if (imu.read_all(sample) == Status::OK) {
             accel.add(sample.accel_g);
             gyro.add(sample.gyro_dps);

@@ -1,4 +1,5 @@
 #pragma once
+#include "vec3.hpp"
 #include <cstdint>
 namespace mpu6500::config {
 enum class AccelRange : uint8_t { G2 = 0, G4 = 1, G8 = 2, G16 = 3 };
@@ -31,6 +32,8 @@ struct Config {
     AccelFilter starting_accel_filter = AccelFilter::Hz460;
     GyroFilter starting_gyro_filter = GyroFilter::Hz250;
     uint8_t starting_sample_divider = 0;
+    Vec3 starting_accel_offset{};
+    Vec3 starting_gyro_offset{};
 };
 
-}
+} // namespace mpu6500::config
