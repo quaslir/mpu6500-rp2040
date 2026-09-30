@@ -294,4 +294,42 @@ void Mpu6500::clear_offsets() {
     accel_offset_ = Vec3{};
     gyro_offset_ = Vec3{};
 }
+
+
+Status Mpu6500::measure_gyro_offset(uint16_t samples, Vec3& offset, float max_spread_dps) const {
+    if(samples == 0) return Status::ERROR;
+    Vec3 sample{}, sum{};
+    const Status read_result_first = read_gyro_raw(sample);
+    if(read_result_first != Status::OK) return read_result_first;
+    Vec3 min_value = sample;
+    Vec3 max_value = sample;
+    const uint32_t period = sample_divider_ + 1;
+    wait_(period);
+    for(uint16_t i = 0; i < samples; i++) {
+        const Status read_result = read_gyro_raw(sample);
+        if(read_result != Status::OK) return read_result;
+        sum += sample;
+        min_value = component_min(min_value, sample);
+        max_value = component_max(max_value, sample);
+        wait_(period);
+    }
+
+
+    Vec3 diff = max_value - min_value;
+    if(diff.x > max_spread_dps || diff.y > max_spread_dps || diff.z > max_spread_dps) return Status::ERROR;
+
+
+   offset.x =  sum.x / static_cast<float>(samples);
+   offset.y =  sum.y / static_cast<float>(samples);
+   offset.z =  sum.z / static_cast<float>(samples);
+
+    return Status::OK;
+}
+Status Mpu6500::calibrate_gyro(uint16_t samples) {
+    Vec3 offset{};
+Status measure_gyro_result = measure_gyro_offset(samples, offset);
+if(measure_gyro_result != Status::OK) return measure_gyro_result;
+set_gyro_offset(offset);
+return Status::OK;
+}
 } // namespace mpu6500

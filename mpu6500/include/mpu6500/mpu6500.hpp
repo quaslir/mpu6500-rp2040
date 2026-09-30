@@ -48,6 +48,10 @@ public:
     [[nodiscard]] const Vec3& accel_offset() const;
     [[nodiscard]] const Vec3& gyro_offset() const;
     void clear_offsets();
+
+    // Calibration
+    [[nodiscard]] Status measure_gyro_offset(uint16_t samples, Vec3& offset, float max_spread_dps = 2.0f) const;
+    [[nodiscard]] Status calibrate_gyro(uint16_t samples);
 private:
     bus::Bus& bus_;
     WaitFunction wait_;
