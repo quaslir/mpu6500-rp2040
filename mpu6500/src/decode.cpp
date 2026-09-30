@@ -1,0 +1,58 @@
+#include "decode.hpp"
+
+#include "layout.hpp"
+#include "mpu6500/config.hpp"
+#include "scales.hpp"
+#include <cstdint>
+#include <span>
+namespace detail {
+int16_t to_int16(std::span<uint8_t> data, uint8_t start_pos) {
+    return static_cast<int16_t>((data[start_pos] << 8) | data[start_pos + 1]);
+}
+
+float accel_range_to_scale(mpu6500::config::AccelRange range) {
+    switch (range) {
+        case mpu6500::config::AccelRange::G2:
+            return mpu6500::scale::ACCEL_G2;
+        case mpu6500::config::AccelRange::G4:
+            return mpu6500::scale::ACCEL_G4;
+        case mpu6500::config::AccelRange::G8:
+            return mpu6500::scale::ACCEL_G8;
+        case mpu6500::config::AccelRange::G16:
+            return mpu6500::scale::ACCEL_G16;
+    }
+
+    return mpu6500::scale::ACCEL_G2;
+}
+
+float gyro_range_to_scale(mpu6500::config::GyroRange range) {
+    switch (range) {
+        case mpu6500::config::GyroRange::Dps250:
+            return mpu6500::scale::GYRO_DPS250;
+        case mpu6500::config::GyroRange::Dps500:
+            return mpu6500::scale::GYRO_DPS500;
+        case mpu6500::config::GyroRange::Dps1000:
+            return mpu6500::scale::GYRO_DPS1000;
+        case mpu6500::config::GyroRange::Dps2000:
+            return mpu6500::scale::GYRO_DPS2000;
+    }
+    return mpu6500::scale::GYRO_DPS250;
+}
+Vec3 decode_vec3(std::span<uint8_t, 6> sample_buffer, float scale) {
+    Vec3 vec3;
+    const int16_t acc_x = to_int16(sample_buffer, 0);
+    const int16_t acc_y = to_int16(sample_buffer, 2);
+    const int16_t acc_z = to_int16(sample_buffer, 4);
+
+    vec3.x = acc_x / scale;
+    vec3.y = acc_y / scale;
+    vec3.z = acc_z / scale;
+
+    return vec3;
+}
+float decode_temperature(std::span<uint8_t, mpu6500::layout::TEMP_SIZE> sample_buffer) {
+    const int16_t temp = to_int16(sample_buffer, 0);
+
+    return temp / mpu6500::scale::TEMP_SENSITIVITY + mpu6500::scale::TEMP_REFERENCE_C;
+}
+} // namespace detail

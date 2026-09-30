@@ -1,6 +1,11 @@
 add_library(mpu6500 STATIC
     src/mpu6500.cpp
     src/mpu6500_registers.cpp
+    src/decode.cpp
+    src/mpu6500_calibration.cpp
+    src/mpu6500_config.cpp
+    src/mpu6500_power.cpp
+    src/mpu6500_read.cpp
 )
 
 target_include_directories(mpu6500

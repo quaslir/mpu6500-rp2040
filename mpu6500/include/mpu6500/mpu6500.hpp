@@ -2,13 +2,12 @@
 
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
-#include "calibration.hpp"
-#include "config.hpp"
+#include "mpu6500/calibration.hpp"
+#include "mpu6500/config.hpp"
 #include "mpu6500/detail/mpu6500_registers.hpp"
-#include "sample.hpp"
-#include "vec3.hpp"
+#include "mpu6500/sample.hpp"
+#include "mpu6500/vec3.hpp"
 #include <cstdint>
-#include <pico/types.h>
 namespace mpu6500 {
 
 using WaitFunction = void (*)(uint32_t delay_ms);

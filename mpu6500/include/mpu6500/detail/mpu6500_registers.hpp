@@ -2,7 +2,7 @@
 
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
-#include "config.hpp"
+#include "mpu6500/config.hpp"
 #include <cstdint>
 #include <span>
 namespace mpu6500::detail {

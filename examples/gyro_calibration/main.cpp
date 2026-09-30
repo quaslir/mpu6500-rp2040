@@ -1,7 +1,7 @@
 #include "bus_pico/i2c_bus.hpp"
-#include "calibration.hpp"
 #include "example_utils.hpp"
 #include "i2c_config.hpp"
+#include "mpu6500/calibration.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include <cstdint>
 #include <cstdio>

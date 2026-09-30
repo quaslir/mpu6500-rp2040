@@ -1,0 +1,12 @@
+#pragma once
+#include "layout.hpp"
+#include "mpu6500/config.hpp"
+#include <cstdint>
+#include <span>
+namespace detail {
+int16_t to_int16(std::span<uint8_t> data, uint8_t start_pos);
+float accel_range_to_scale(mpu6500::config::AccelRange range);
+float gyro_range_to_scale(mpu6500::config::GyroRange range);
+Vec3 decode_vec3(std::span<uint8_t, 6> sample_buffer, float scale);
+float decode_temperature(std::span<uint8_t, mpu6500::layout::TEMP_SIZE> sample_buffer);
+} // namespace detail

@@ -5,7 +5,6 @@
 #include "example_utils.hpp"
 #include "i2c_config.hpp"
 #include "mpu6500/mpu6500.hpp"
-
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
@@ -147,13 +146,22 @@ uint32_t now_ms() {
 
 void print_sample(const Sample& s) {
     std::printf("accel %+7.3f %+7.3f %+7.3f g | gyro %+8.2f %+8.2f %+8.2f dps | temp %6.2f C\n",
-                s.accel_g.x, s.accel_g.y, s.accel_g.z, s.gyro_dps.x, s.gyro_dps.y, s.gyro_dps.z,
+                s.accel_g.x,
+                s.accel_g.y,
+                s.accel_g.z,
+                s.gyro_dps.x,
+                s.gyro_dps.y,
+                s.gyro_dps.z,
                 s.temperature_c);
 }
 
 void print_axes(const cfg::EnabledAxes& a) {
-    std::printf("  axes      accel x=%s y=%s z=%s | gyro x=%s y=%s z=%s\n", on_off(a.accel_x),
-                on_off(a.accel_y), on_off(a.accel_z), on_off(a.gyro_x), on_off(a.gyro_y),
+    std::printf("  axes      accel x=%s y=%s z=%s | gyro x=%s y=%s z=%s\n",
+                on_off(a.accel_x),
+                on_off(a.accel_y),
+                on_off(a.accel_z),
+                on_off(a.gyro_x),
+                on_off(a.gyro_y),
                 on_off(a.gyro_z));
 }
 
@@ -161,19 +169,30 @@ void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
     const Vec3 ao = imu.accel_offset();
     const Vec3 go = imu.gyro_offset();
     std::printf("--- status ---\n");
-    std::printf("  accel     range +-%s g, filter %s\n", name_of(ACCEL_RANGES, imu.accel_range()),
+    std::printf("  accel     range +-%s g, filter %s\n",
+                name_of(ACCEL_RANGES, imu.accel_range()),
                 name_of(ACCEL_FILTERS, imu.accel_filter()));
-    std::printf("  gyro      range +-%s dps, filter %s\n", name_of(GYRO_RANGES, imu.gyro_range()),
+    std::printf("  gyro      range +-%s dps, filter %s\n",
+                name_of(GYRO_RANGES, imu.gyro_range()),
                 name_of(GYRO_FILTERS, imu.gyro_filter()));
-    std::printf("  divider   %u (%u Hz when filter is 184..5 Hz)\n", imu.sample_divider(),
+    std::printf("  divider   %u (%u Hz when filter is 184..5 Hz)\n",
+                imu.sample_divider(),
                 1000u / (imu.sample_divider() + 1u));
-    std::printf("  power     sleep=%s standby=%s temp=%s clock=%s\n", on_off(imu.is_sleeping()),
-                on_off(imu.gyro_standby()), on_off(imu.temperature_enabled()),
+    std::printf("  power     sleep=%s standby=%s temp=%s clock=%s\n",
+                on_off(imu.is_sleeping()),
+                on_off(imu.gyro_standby()),
+                on_off(imu.temperature_enabled()),
                 name_of(CLOCK_SOURCES, imu.clock_source()));
     print_axes(imu.enabled_axes());
-    std::printf("  offsets   accel %+.4f %+.4f %+.4f g | gyro %+.3f %+.3f %+.3f dps\n", ao.x,
-                ao.y, ao.z, go.x, go.y, go.z);
-    std::printf("  stream    %s, every %lu ms\n", on_off(state.streaming),
+    std::printf("  offsets   accel %+.4f %+.4f %+.4f g | gyro %+.3f %+.3f %+.3f dps\n",
+                ao.x,
+                ao.y,
+                ao.z,
+                go.x,
+                go.y,
+                go.z);
+    std::printf("  stream    %s, every %lu ms\n",
+                on_off(state.streaming),
                 static_cast<unsigned long>(state.stream_period_ms));
 }
 
@@ -461,7 +480,7 @@ int main() {
 
         if (state.streaming && now_ms() - state.last_stream_ms >= state.stream_period_ms) {
             state.last_stream_ms = now_ms();
-           Sample sample{};
+            Sample sample{};
             const Status status = imu.read_all(sample);
             if (status == Status::OK)
                 print_sample(sample);
