@@ -185,7 +185,6 @@ int main() {
     print_status("init", init_status);
     if (init_status != Status::OK)
         halt("init failed", init_status);
-
     std::printf("\nSettings: accel range code %u, gyro range code %u, sample divider %u\n",
                 static_cast<unsigned>(imu.accel_range()),
                 static_cast<unsigned>(imu.gyro_range()),

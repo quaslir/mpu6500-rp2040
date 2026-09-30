@@ -2,6 +2,7 @@
 
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
+#include "calibration.hpp"
 #include "config.hpp"
 #include "sample.hpp"
 #include "vec3.hpp"
@@ -21,7 +22,7 @@ public:
     [[nodiscard]] Status set_gyro_range(config::GyroRange range);
     [[nodiscard]] config::AccelRange accel_range() const;
     [[nodiscard]] config::GyroRange gyro_range() const;
-        // Measurement
+    // Measurement
     [[nodiscard]] Status read_all(Sample& sample) const;
 
     [[nodiscard]] Status read_accel(Vec3& sample) const;
@@ -50,8 +51,16 @@ public:
     void clear_offsets();
 
     // Calibration
-    [[nodiscard]] Status measure_gyro_offset(uint16_t samples, Vec3& offset, float max_spread_dps = 2.0f) const;
-    [[nodiscard]] Status calibrate_gyro(uint16_t samples);
+    [[nodiscard]] Status
+    measure_gyro_offset(Vec3& offset,
+                        uint16_t samples = calibration::DEFAULT_GYRO_SAMPLES,
+                        float max_spread_dps = calibration::DEFAULT_GYRO_MAX_SPREAD_DPS,
+                        uint16_t warmup_samples = calibration::DEFAULT_GYRO_WARMUP_SAMPLES) const;
+    [[nodiscard]] Status
+    calibrate_gyro(uint16_t samples = calibration::DEFAULT_GYRO_SAMPLES,
+                   float max_spread_dps = calibration::DEFAULT_GYRO_MAX_SPREAD_DPS,
+                   uint16_t warmup_samples = calibration::DEFAULT_GYRO_WARMUP_SAMPLES);
+
 private:
     bus::Bus& bus_;
     WaitFunction wait_;

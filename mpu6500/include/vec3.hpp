@@ -10,7 +10,7 @@ struct Vec3 {
 
         return *this;
     }
-    Vec3& operator += (const Vec3& other) {
+    Vec3& operator+=(const Vec3& other) {
         x += other.x;
         y += other.y;
         z += other.z;
@@ -18,8 +18,9 @@ struct Vec3 {
         return *this;
     }
 
-    Vec3& operator /=(const Vec3& other) {
-        if(other.x == 0 || other.y == 0 || other.z == 0) return *this;
+    Vec3& operator/=(const Vec3& other) {
+        if (other.x == 0 || other.y == 0 || other.z == 0)
+            return *this;
         x /= other.x;
         y /= other.y;
         z /= other.z;
@@ -27,7 +28,7 @@ struct Vec3 {
         return *this;
     }
 
-    Vec3& operator *=(const Vec3& other) {
+    Vec3& operator*=(const Vec3& other) {
         x *= other.x;
         y *= other.y;
         z *= other.z;
@@ -37,9 +38,9 @@ struct Vec3 {
 };
 
 inline Vec3 operator-(const Vec3& vec1, const Vec3& vec2) {
-Vec3 vec = vec1;
-vec -= vec2;
-return vec;
+    Vec3 vec = vec1;
+    vec -= vec2;
+    return vec;
 }
 inline Vec3 operator+(const Vec3& vec1, const Vec3& vec2) {
     Vec3 vec = vec1;
@@ -47,18 +48,17 @@ inline Vec3 operator+(const Vec3& vec1, const Vec3& vec2) {
     return vec;
 }
 
-inline Vec3 operator / (const Vec3& vec1, const Vec3& vec2) {
+inline Vec3 operator/(const Vec3& vec1, const Vec3& vec2) {
     Vec3 vec = vec1;
     vec /= vec2;
     return vec;
 }
 
-inline Vec3 operator *(const Vec3& vec1, const Vec3& vec2) {
+inline Vec3 operator*(const Vec3& vec1, const Vec3& vec2) {
     Vec3 vec = vec1;
     vec *= vec2;
     return vec;
 }
-
 
 inline Vec3 component_min(const Vec3& vec1, const Vec3& vec2) {
     Vec3 vec{};
@@ -68,7 +68,6 @@ inline Vec3 component_min(const Vec3& vec1, const Vec3& vec2) {
 
     return vec;
 }
-
 
 inline Vec3 component_max(const Vec3& vec1, const Vec3& vec2) {
     Vec3 vec{};
