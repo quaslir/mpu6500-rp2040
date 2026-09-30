@@ -27,4 +27,9 @@ inline constexpr uint8_t USER_CTRL{0x6A};
 inline constexpr uint8_t PWR_MGMT_1{0x6B};
 inline constexpr uint8_t WHO_AM_I{0x75};
 
+// Filters
+inline constexpr uint8_t CONFIG{0x1A};        // Gyro and temperature filters
+inline constexpr uint8_t ACCEL_CONFIG2{0x1D}; // Accel filter
+inline constexpr uint8_t SMPLRT_DIV{0x19};
+
 } // namespace mpu6500::reg
