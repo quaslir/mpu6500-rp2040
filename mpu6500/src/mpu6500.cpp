@@ -142,8 +142,8 @@ config::GyroRange Mpu6500::gyro_range() const {
 }
 
 Status Mpu6500::set_accel_range(config::AccelRange range) {
-    const Status set_accel_range_result =
-        bus_.write_reg(reg::ACCEL_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
+    const Status set_accel_range_result = update_bits(
+        reg::ACCEL_CONFIG, bits::fs_sel::MASK, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
     if (set_accel_range_result != Status::OK)
         return set_accel_range_result;
     accel_range_ = range;
@@ -151,8 +151,8 @@ Status Mpu6500::set_accel_range(config::AccelRange range) {
 }
 
 Status Mpu6500::set_gyro_range(config::GyroRange range) {
-    const Status set_gyro_range_result =
-        bus_.write_reg(reg::GYRO_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
+    const Status set_gyro_range_result = update_bits(
+        reg::GYRO_CONFIG, bits::fs_sel::MASK, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
     if (set_gyro_range_result != Status::OK)
         return set_gyro_range_result;
     gyro_range_ = range;
@@ -243,16 +243,49 @@ Status Mpu6500::read_temp(float& sample) const {
     return Status::OK;
 }
 
+Status Mpu6500::update_bits(uint8_t reg, uint8_t mask, uint8_t data) {
+    uint8_t current{};
+    const Status read_current_result = bus_.read_regs(reg, std::span<uint8_t>(&current, 1));
+    if (read_current_result != Status::OK) {
+        return read_current_result;
+    }
+    const uint8_t updated = static_cast<uint8_t>((current & ~mask) | (data & mask));
+    return bus_.write_reg(reg, updated);
+}
+
 Status Mpu6500::set_gyro_filter(config::GyroFilter filter) {
-    Status set_gyro_filter_result = bus_.write_reg(reg::CONFIG, static_cast<uint8_t>(filter));
-    if (set_gyro_filter_result != Status::OK)
-        return set_gyro_filter_result;
+
+    switch (filter) {
+        case config::GyroFilter::Bypass3600Hz:
+        case config::GyroFilter::Bypass8800Hz: {
+            const uint8_t data = filter == config::GyroFilter::Bypass3600Hz ? bits::gyro_config::FCHOICE_B_BYPASS_3600HZ : bits::gyro_config::FCHOICE_B_BYPASS_8800HZ;
+            const Status set_gyro_bypass_result = update_bits(
+                reg::GYRO_CONFIG, bits::gyro_config::FCHOICE_B_MASK, data);
+            if (set_gyro_bypass_result != Status::OK)
+                return set_gyro_bypass_result;
+            break;
+        }
+        default: {
+            const Status set_gyro_bypass_result =
+                update_bits(reg::GYRO_CONFIG,
+                            bits::gyro_config::FCHOICE_B_MASK,
+                            bits::gyro_config::FCHOICE_B_USE_DLPF);
+            if (set_gyro_bypass_result != Status::OK)
+                return set_gyro_bypass_result;
+            const Status set_gyro_filter_result =
+                update_bits(reg::CONFIG, bits::config::DLPF_CFG_MASK, static_cast<uint8_t>(filter));
+            if (set_gyro_filter_result != Status::OK) {
+                return set_gyro_filter_result;
+            }
+            break;
+        }
+    }
     gyro_filter_ = filter;
     return Status::OK;
 }
 Status Mpu6500::set_accel_filter(config::AccelFilter filter) {
-    Status set_accel_filter_result =
-        bus_.write_reg(reg::ACCEL_CONFIG2, static_cast<uint8_t>(filter));
+    const Status set_accel_filter_result = update_bits(
+        reg::ACCEL_CONFIG2, bits::accel_config2::A_DLPF_CFG_MASK | bits::accel_config2::ACCEL_FCHOICE_B, static_cast<uint8_t>(filter));
     if (set_accel_filter_result != Status::OK) {
         return set_accel_filter_result;
     }
@@ -353,7 +386,7 @@ Status Mpu6500::measure_mean_impl(ReadVec3Fn func,
         wait_(period);
     }
 
-    Vec3 diff = max_value - min_value;
+    const Vec3 diff = max_value - min_value;
     if (diff.x > options.max_spread || diff.y > options.max_spread || diff.z > options.max_spread)
         return Status::ERROR;
 
@@ -370,7 +403,7 @@ Status Mpu6500::measure_gyro_offset(Vec3& offset,
 }
 Status Mpu6500::calibrate_gyro(const calibration::MeasureOptions& options) {
     Vec3 offset{};
-    Status measure_gyro_result = measure_gyro_offset(offset, options);
+    const Status measure_gyro_result = measure_gyro_offset(offset, options);
     if (measure_gyro_result != Status::OK)
         return measure_gyro_result;
 
@@ -399,7 +432,7 @@ Status Mpu6500::measure_accel_offset(Vec3& offset,
 Status Mpu6500::calibrate_accel(const Vec3& expected_gravity_g,
                                 const calibration::MeasureOptions& options) {
     Vec3 offset{};
-    Status measure_accel_result = measure_accel_offset(offset, expected_gravity_g, options);
+    const Status measure_accel_result = measure_accel_offset(offset, expected_gravity_g, options);
     if (measure_accel_result != Status::OK)
         return measure_accel_result;
 

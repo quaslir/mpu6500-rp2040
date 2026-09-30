@@ -13,7 +13,11 @@ enum class GyroFilter : uint8_t {
     Hz41 = 3,
     Hz20 = 4,
     Hz10 = 5,
-    Hz5 = 6
+    Hz5 = 6,
+    Hz3600 = 7,
+    Bypass3600Hz = 8,
+    Bypass8800Hz = 9
+
 };
 
 enum class AccelFilter : uint8_t {
@@ -23,7 +27,8 @@ enum class AccelFilter : uint8_t {
     Hz41 = 3,
     Hz20 = 4,
     Hz10 = 5,
-    Hz5 = 6
+    Hz5 = 6,
+    Bypass1130Hz = 8
 };
 struct Config {
     bool use_i2c = true;
