@@ -10,7 +10,7 @@
 int main() {
     stdio_init_all();
     i2c_config::init_test_i2c();
-    mpu6500::Config config{};
+    mpu6500::config::Config config{};
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, 30000};
     mpu6500::Mpu6500 mpu6500(bus, sleep_ms, config);
     uint8_t id{0};
@@ -23,7 +23,7 @@ int main() {
     std::printf("%-26s | %-32s | %s\n", "accel [g]", "gyro [dps]", "temp [C]");
 
     for (;;) {
-        mpu6500::Sample sample{};
+        Sample sample{};
         const Status status = mpu6500.read_all(sample);
 
         if (status != Status::OK) {

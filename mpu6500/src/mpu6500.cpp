@@ -3,10 +3,13 @@
 #include "bits.hpp"
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
+#include "config.hpp"
 #include "device.hpp"
 #include "layout.hpp"
 #include "registers.hpp"
 #include "scales.hpp"
+#include "vec3.hpp"
+#include "sample.hpp"
 #include <array>
 #include <cstdint>
 #include <span>
@@ -15,37 +18,36 @@ int16_t to_int16(std::span<uint8_t> data, uint8_t start_pos) {
     return static_cast<int16_t>((data[start_pos] << 8) | data[start_pos + 1]);
 }
 
-float accel_range_to_scale(mpu6500::AccelRange range) {
+float accel_range_to_scale(mpu6500::config::AccelRange range) {
     switch (range) {
-        case mpu6500::AccelRange::G2:
+        case mpu6500::config::AccelRange::G2:
             return mpu6500::scale::ACCEL_G2;
-        case mpu6500::AccelRange::G4:
+        case mpu6500::config::AccelRange::G4:
             return mpu6500::scale::ACCEL_G4;
-        case mpu6500::AccelRange::G8:
+        case mpu6500::config::AccelRange::G8:
             return mpu6500::scale::ACCEL_G8;
-        case mpu6500::AccelRange::G16:
+        case mpu6500::config::AccelRange::G16:
             return mpu6500::scale::ACCEL_G16;
     }
 
     return mpu6500::scale::ACCEL_G2;
 }
 
-float gyro_range_to_scale(mpu6500::GyroRange range) {
+float gyro_range_to_scale(mpu6500::config::GyroRange range) {
     switch (range) {
-        case mpu6500::GyroRange::Dps250:
+        case mpu6500::config::GyroRange::Dps250:
             return mpu6500::scale::GYRO_DPS250;
-        case mpu6500::GyroRange::Dps500:
+        case mpu6500::config::GyroRange::Dps500:
             return mpu6500::scale::GYRO_DPS500;
-        case mpu6500::GyroRange::Dps1000:
+        case mpu6500::config::GyroRange::Dps1000:
             return mpu6500::scale::GYRO_DPS1000;
-        case mpu6500::GyroRange::Dps2000:
+        case mpu6500::config::GyroRange::Dps2000:
             return mpu6500::scale::GYRO_DPS2000;
     }
     return mpu6500::scale::GYRO_DPS250;
 }
-
-mpu6500::Vec3 decode_vec3(std::span<uint8_t, 6> sample_buffer, float scale) {
-    mpu6500::Vec3 vec3;
+Vec3 decode_vec3(std::span<uint8_t, 6> sample_buffer, float scale) {
+    Vec3 vec3;
     const int16_t acc_x = to_int16(sample_buffer, 0);
     const int16_t acc_y = to_int16(sample_buffer, 2);
     const int16_t acc_z = to_int16(sample_buffer, 4);
@@ -64,7 +66,7 @@ float decode_temperature(std::span<uint8_t, mpu6500::layout::TEMP_SIZE> sample_b
 } // namespace
 
 namespace mpu6500 {
-Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const Config& config)
+Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
     : bus_(bus), wait_(wait), use_i2c_(config.use_i2c),
       accel_range_(config.starting_accelerometer_range),
       gyro_range_(config.starting_gyroscope_range), accel_filter_(config.starting_accel_filter),
@@ -128,15 +130,15 @@ Status Mpu6500::init() {
     return Status::OK;
 }
 
-AccelRange Mpu6500::accel_range() const {
+config::AccelRange Mpu6500::accel_range() const {
     return accel_range_;
 }
 
-GyroRange Mpu6500::gyro_range() const {
+config::GyroRange Mpu6500::gyro_range() const {
     return gyro_range_;
 }
 
-Status Mpu6500::set_accel_range(AccelRange range) {
+Status Mpu6500::set_accel_range(config::AccelRange range) {
     const Status set_accel_range_result =
         bus_.write_reg(reg::ACCEL_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
     if (set_accel_range_result != Status::OK)
@@ -145,7 +147,7 @@ Status Mpu6500::set_accel_range(AccelRange range) {
     return Status::OK;
 }
 
-Status Mpu6500::set_gyro_range(GyroRange range) {
+Status Mpu6500::set_gyro_range(config::GyroRange range) {
     const Status set_gyro_range_result =
         bus_.write_reg(reg::GYRO_CONFIG, static_cast<uint8_t>(range) << bits::fs_sel::SHIFT);
     if (set_gyro_range_result != Status::OK)
@@ -212,14 +214,14 @@ Status Mpu6500::read_temp(float& sample) const {
     return Status::OK;
 }
 
-Status Mpu6500::set_gyro_filter(GyroFilter filter) {
+Status Mpu6500::set_gyro_filter(config::GyroFilter filter) {
     Status set_gyro_filter_result = bus_.write_reg(reg::CONFIG, static_cast<uint8_t>(filter));
     if (set_gyro_filter_result != Status::OK)
         return set_gyro_filter_result;
     gyro_filter_ = filter;
     return Status::OK;
 }
-Status Mpu6500::set_accel_filter(AccelFilter filter) {
+Status Mpu6500::set_accel_filter(config::AccelFilter filter) {
     Status set_accel_filter_result =
         bus_.write_reg(reg::ACCEL_CONFIG2, static_cast<uint8_t>(filter));
     if (set_accel_filter_result != Status::OK) {
@@ -237,10 +239,10 @@ Status Mpu6500::set_sample_rate_divider(uint8_t divider) {
     return Status::OK;
 }
 
-GyroFilter Mpu6500::gyro_filter() const {
+config::GyroFilter Mpu6500::gyro_filter() const {
     return gyro_filter_;
 }
-AccelFilter Mpu6500::accel_filter() const {
+config::AccelFilter Mpu6500::accel_filter() const {
     return accel_filter_;
 }
 uint8_t Mpu6500::sample_divider() const {

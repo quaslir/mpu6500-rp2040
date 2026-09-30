@@ -47,7 +47,7 @@ struct AxisStats {
 struct Vec3Stats {
     AxisStats x, y, z;
 
-    void add(const mpu6500::Vec3& v) {
+    void add(const Vec3& v) {
         x.add(v.x);
         y.add(v.y);
         z.add(v.z);
@@ -56,18 +56,18 @@ struct Vec3Stats {
 
 struct FilterStep {
     const char* name;
-    mpu6500::GyroFilter gyro;
-    mpu6500::AccelFilter accel;
+    mpu6500::config::GyroFilter gyro;
+    mpu6500::config::AccelFilter accel;
 };
 
 constexpr std::array<FilterStep, 7> FILTER_STEPS{{
-    {"widest (gyro 250 / accel 460 Hz)", mpu6500::GyroFilter::Hz250, mpu6500::AccelFilter::Hz460},
-    {"184 Hz", mpu6500::GyroFilter::Hz184, mpu6500::AccelFilter::Hz184},
-    {"92 Hz", mpu6500::GyroFilter::Hz92, mpu6500::AccelFilter::Hz92},
-    {"41 Hz", mpu6500::GyroFilter::Hz41, mpu6500::AccelFilter::Hz41},
-    {"20 Hz", mpu6500::GyroFilter::Hz20, mpu6500::AccelFilter::Hz20},
-    {"10 Hz", mpu6500::GyroFilter::Hz10, mpu6500::AccelFilter::Hz10},
-    {"5 Hz", mpu6500::GyroFilter::Hz5, mpu6500::AccelFilter::Hz5},
+    {"widest (gyro 250 / accel 460 Hz)", mpu6500::config::GyroFilter::Hz250, mpu6500::config::AccelFilter::Hz460},
+    {"184 Hz", mpu6500::config::GyroFilter::Hz184, mpu6500::config::AccelFilter::Hz184},
+    {"92 Hz", mpu6500::config::GyroFilter::Hz92, mpu6500::config::AccelFilter::Hz92},
+    {"41 Hz", mpu6500::config::GyroFilter::Hz41, mpu6500::config::AccelFilter::Hz41},
+    {"20 Hz", mpu6500::config::GyroFilter::Hz20, mpu6500::config::AccelFilter::Hz20},
+    {"10 Hz", mpu6500::config::GyroFilter::Hz10, mpu6500::config::AccelFilter::Hz10},
+    {"5 Hz", mpu6500::config::GyroFilter::Hz5, mpu6500::config::AccelFilter::Hz5},
 }};
 
 const char* status_text(Status status) {
@@ -112,7 +112,7 @@ void measure_and_print(mpu6500::Mpu6500& imu, const FilterStep& step) {
     int failed_reads = 0;
 
     for (int i = 0; i < SAMPLES_PER_STEP; ++i) {
-        mpu6500::Sample sample{};
+       Sample sample{};
         if (imu.read_all(sample) == Status::OK) {
             accel.add(sample.accel_g);
             gyro.add(sample.gyro_dps);
@@ -169,7 +169,7 @@ int main() {
 
     i2c_config::init_test_i2c();
 
-    mpu6500::Config config{};
+    mpu6500::config::Config config{};
     config.starting_sample_divider = 9; // 1000 / (1 + 9) = 100 Hz
 
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, 30000};
