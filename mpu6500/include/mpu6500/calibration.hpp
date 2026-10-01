@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec3.hpp"
+#include "mpu6500/vec3.hpp"
 #include <cstdint>
 namespace mpu6500::calibration {
 

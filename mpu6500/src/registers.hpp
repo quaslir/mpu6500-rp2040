@@ -33,4 +33,10 @@ inline constexpr uint8_t CONFIG{0x1A};        // Gyro and temperature filters
 inline constexpr uint8_t ACCEL_CONFIG2{0x1D}; // Accel filter
 inline constexpr uint8_t SMPLRT_DIV{0x19};
 
+inline constexpr uint8_t XG_OFFSET_H{0x13};
+inline constexpr uint8_t XG_OFFSET_L{0x14};
+inline constexpr uint8_t YG_OFFSET_H{0x15};
+inline constexpr uint8_t YG_OFFSET_L{0x16};
+inline constexpr uint8_t ZG_OFFSET_H{0x17};
+inline constexpr uint8_t ZG_OFFSET_L{0x18};
 } // namespace mpu6500::reg

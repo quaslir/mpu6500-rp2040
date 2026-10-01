@@ -95,4 +95,11 @@ Status Mpu6500::init() {
     return Status::OK;
 }
 
+
+Status Mpu6500::reset_signal_paths(bool gyro, bool accel, bool temp) {
+    return regs_.write_signal_path_reset(gyro, accel, temp);
+}
+Status Mpu6500::reset_sensor_registers() {
+    return regs_.write_sensor_reset();
+}
 } // namespace mpu6500

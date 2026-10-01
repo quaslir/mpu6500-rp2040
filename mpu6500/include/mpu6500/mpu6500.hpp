@@ -80,6 +80,8 @@ public:
     [[nodiscard]] config::ClockSource clock_source() const;
     [[nodiscard]] config::EnabledAxes enabled_axes() const;
 
+    [[nodiscard]] Status reset_signal_paths(bool gyro = true, bool accel = true, bool temp = true);
+    [[nodiscard]] Status reset_sensor_registers();
 private:
     using ReadVec3Fn = Status (Mpu6500::*)(Vec3&) const;
     [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,

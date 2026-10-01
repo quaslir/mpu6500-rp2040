@@ -3,6 +3,7 @@
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
 #include "mpu6500/config.hpp"
+#include "mpu6500/vec3.hpp"
 #include <cstdint>
 #include <span>
 namespace mpu6500::detail {
@@ -34,6 +35,11 @@ public:
     [[nodiscard]] Status read_accel_bytes(std::span<uint8_t, 6> buffer) const;
     [[nodiscard]] Status read_gyro_bytes(std::span<uint8_t, 6> buffer) const;
     [[nodiscard]] Status read_temp_bytes(std::span<uint8_t, 2> buffer) const;
+
+    [[nodiscard]] Status write_signal_path_reset(bool gyro, bool accel, bool temp);
+    [[nodiscard]] Status write_sensor_reset();
+    [[nodiscard]] Status read_gyro_hw_offset(RawVec3& offset) const;
+    [[nodiscard]] Status write_gyro_hw_offset(const RawVec3& offset);
 
 private:
     [[nodiscard]] Status update_bits(uint8_t reg, uint8_t mask, uint8_t data);

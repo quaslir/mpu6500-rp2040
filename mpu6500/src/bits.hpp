@@ -34,16 +34,18 @@ inline constexpr uint8_t DIS_GYRO_MASK{DIS_XG | DIS_YG | DIS_ZG};      // 0x07
 inline constexpr uint8_t DIS_ALL_MASK{DIS_ACCEL_MASK | DIS_GYRO_MASK}; // 0x3F, bits 7:6 untouched
 } // namespace pwr_mgmt_2
 
-namespace signal_path_reset {
-inline constexpr uint8_t GYRO{0x04};
-inline constexpr uint8_t ACCEL{0x02};
-inline constexpr uint8_t TEMP{0x01};
-inline constexpr uint8_t ALL{GYRO | ACCEL | TEMP};
-} // namespace signal_path_reset
-
 namespace user_ctrl {
 inline constexpr uint8_t I2C_IF_DIS{0x10};
+inline constexpr uint8_t SIG_COND_RST{
+    0x01}; // bit 0, resets all signal paths and clears data registers
 } // namespace user_ctrl
+
+namespace signal_path_reset {
+inline constexpr uint8_t GYRO{0x04};  // bit 2
+inline constexpr uint8_t ACCEL{0x02}; // bit 1
+inline constexpr uint8_t TEMP{0x01};  // bit 0
+inline constexpr uint8_t ALL{GYRO | ACCEL | TEMP};
+} // namespace signal_path_reset
 
 namespace fs_sel {
 inline constexpr uint8_t SHIFT{3};

@@ -2,7 +2,9 @@
 
 #include "bits.hpp"
 #include "bus/bus.hpp"
+#include "layout.hpp"
 #include "registers.hpp"
+#include <array>
 #include <cstdint>
 #include <span>
 namespace mpu6500::detail {
@@ -129,6 +131,15 @@ Status Mpu6500Regs::read_gyro_bytes(std::span<uint8_t, 6> buffer) const {
 }
 Status Mpu6500Regs::read_temp_bytes(std::span<uint8_t, 2> buffer) const {
     return bus_.read_regs(reg::TEMP_OUT_H, buffer);
+}
+
+Status Mpu6500Regs::write_signal_path_reset(bool gyro, bool accel, bool temp) {
+    uint8_t byte = static_cast<uint8_t>((gyro ? bits::signal_path_reset::GYRO : 0) |
+        (accel ? bits::signal_path_reset::ACCEL : 0) | (temp ? bits::signal_path_reset::TEMP : 0));
+    return bus_.write_reg(reg::SIGNAL_PATH_RESET, byte);
+}
+Status Mpu6500Regs::write_sensor_reset() {
+    return update_bits(reg::USER_CTRL, bits::user_ctrl::SIG_COND_RST, bits::user_ctrl::SIG_COND_RST);
 }
 
 } // namespace mpu6500::detail
