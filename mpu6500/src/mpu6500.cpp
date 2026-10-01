@@ -4,6 +4,8 @@
 #include "bus/status.hpp"
 #include "device.hpp"
 #include "mpu6500/config.hpp"
+#include "registers.hpp"
+#include <cmath>
 #include <cstdint>
 
 namespace mpu6500 {
@@ -95,11 +97,53 @@ Status Mpu6500::init() {
     return Status::OK;
 }
 
-
 Status Mpu6500::reset_signal_paths(bool gyro, bool accel, bool temp) {
     return regs_.write_signal_path_reset(gyro, accel, temp);
 }
 Status Mpu6500::reset_sensor_registers() {
     return regs_.write_sensor_reset();
+}
+
+float Mpu6500::gyro_sample_rate_hz() const {
+    switch (gyro_filter_) {
+        case config::GyroFilter::Bypass3600Hz:
+        case config::GyroFilter::Bypass8800Hz:
+            return device::GYRO_RATE_BYPASS_HZ;
+        case config::GyroFilter::Hz250:
+        case config::GyroFilter::Hz3600:
+            return device::GYRO_RATE_NO_DLPF_HZ;
+        default:
+            return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
+                   static_cast<float>((1 + sample_divider_));
+    }
+}
+float Mpu6500::accel_sample_rate_hz() const {
+    switch (accel_filter_) {
+        case config::AccelFilter::Bypass1130Hz:
+            return device::ACCEL_RATE_BYPASS_HZ;
+        default:
+            return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
+                   static_cast<float>((1 + sample_divider_));
+    }
+}
+bool Mpu6500::divider_effective() const {
+    switch (gyro_filter_) {
+        case config::GyroFilter::Hz250:
+        case config::GyroFilter::Hz3600:
+        case config::GyroFilter::Bypass3600Hz:
+        case config::GyroFilter::Bypass8800Hz:
+            return false;
+        default:
+            return true;
+    }
+}
+
+Status Mpu6500::set_sample_rate_hz(uint16_t hz) {
+    if (!divider_effective())
+        return Status::ERROR;
+    if (hz < device::MIN_DIVIDED_RATE_HZ || hz > device::INTERNAL_SAMPLE_RATE_HZ)
+        return Status::ERROR;
+    uint8_t divider = static_cast<uint8_t>(std::lround(static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) / static_cast<float>(hz)) - 1);
+    return set_sample_rate_divider(divider);
 }
 } // namespace mpu6500

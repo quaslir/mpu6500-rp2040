@@ -1,5 +1,7 @@
 #include "mpu6500/mpu6500.hpp"
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 namespace mpu6500 {
 void Mpu6500::set_accel_offset(const Vec3& offset) {
     accel_offset_ = offset;
@@ -23,34 +25,37 @@ void Mpu6500::clear_offsets() {
 Status Mpu6500::measure_mean(calibration::Sensor sensor,
                              Vec3& mean,
                              const calibration::MeasureOptions& options) const {
-    ReadVec3Fn func;
+    auto hz_to_period_ms = [](float hz) -> uint32_t {
+        auto rounded_period = std::ceil(1000.0f / hz);
+        auto period_ms = std::max(rounded_period, 1.0f);
+        return static_cast<uint32_t>(period_ms);
+    };
+
     switch (sensor) {
         case calibration::Sensor::Gyro:
-            func = &Mpu6500::read_gyro_raw;
-            break;
+            return measure_mean_impl(
+                &Mpu6500::read_gyro_raw, mean, options, hz_to_period_ms(gyro_sample_rate_hz()));
         case calibration::Sensor::Accel:
-            func = &Mpu6500::read_accel_raw;
-            break;
+            return measure_mean_impl(
+                &Mpu6500::read_accel_raw, mean, options, hz_to_period_ms(accel_sample_rate_hz()));
         default:
             return Status::ERROR;
     }
-
-    return measure_mean_impl(func, mean, options);
 }
 
 Status Mpu6500::measure_mean_impl(ReadVec3Fn func,
                                   Vec3& mean,
-                                  const calibration::MeasureOptions& options) const {
+                                  const calibration::MeasureOptions& options,
+                                  uint32_t period_ms) const {
     if (options.samples == 0)
         return Status::ERROR;
-    const uint32_t period = sample_divider_ + 1;
-    auto warm_up = [func, this, period](uint16_t samples) -> Status {
+    auto warm_up = [func, this, period_ms](uint16_t samples) -> Status {
         Vec3 sample{};
         for (uint16_t i = 0; i < samples; i++) {
             const Status read_result = (this->*func)(sample);
             if (read_result != Status::OK)
                 return read_result;
-            wait_(period);
+            wait_(period_ms);
         }
 
         return Status::OK;
@@ -65,7 +70,7 @@ Status Mpu6500::measure_mean_impl(ReadVec3Fn func,
         return read_result_first;
     Vec3 min_value = sample;
     Vec3 max_value = sample;
-    wait_(period);
+    wait_(period_ms);
     for (uint16_t i = 0; i < options.samples; i++) {
         const Status read_result = (this->*func)(sample);
         if (read_result != Status::OK)
@@ -73,7 +78,7 @@ Status Mpu6500::measure_mean_impl(ReadVec3Fn func,
         sum += sample;
         min_value = component_min(min_value, sample);
         max_value = component_max(max_value, sample);
-        wait_(period);
+        wait_(period_ms);
     }
 
     const Vec3 diff = max_value - min_value;

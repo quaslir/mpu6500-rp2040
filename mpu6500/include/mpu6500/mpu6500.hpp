@@ -82,11 +82,18 @@ public:
 
     [[nodiscard]] Status reset_signal_paths(bool gyro = true, bool accel = true, bool temp = true);
     [[nodiscard]] Status reset_sensor_registers();
+
+    [[nodiscard]] float gyro_sample_rate_hz() const;
+    [[nodiscard]] float accel_sample_rate_hz() const;
+    [[nodiscard]] bool divider_effective() const;
+    [[nodiscard]] Status set_sample_rate_hz(uint16_t sample_rate);
+
 private:
     using ReadVec3Fn = Status (Mpu6500::*)(Vec3&) const;
     [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,
                                            Vec3& mean,
-                                           const calibration::MeasureOptions& options) const;
+                                           const calibration::MeasureOptions& options,
+                                           uint32_t period_ms) const;
     detail::Mpu6500Regs regs_;
     WaitFunction wait_;
     bool use_i2c_;
