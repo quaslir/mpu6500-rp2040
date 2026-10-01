@@ -538,8 +538,8 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
             std::printf("usage: ghwoff <x> <y> <z>   (-32768..32767)\n");
             return;
         }
-        const RawVec3 offset{static_cast<int16_t>(x), static_cast<int16_t>(y),
-                             static_cast<int16_t>(z)};
+        const RawVec3 offset{
+            static_cast<int16_t>(x), static_cast<int16_t>(y), static_cast<int16_t>(z)};
         print_result("set_gyro_hw_offset", imu.set_gyro_hw_offset(offset));
     } else {
         std::printf("unknown command '%s', type 'help'\n", cmd);

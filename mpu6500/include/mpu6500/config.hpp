@@ -1,5 +1,5 @@
 #pragma once
-#include "vec3.hpp"
+#include "math/vec3.hpp"
 #include <cstdint>
 namespace mpu6500::config {
 enum class AccelRange : uint8_t { G2 = 0, G4 = 1, G8 = 2, G16 = 3 };
