@@ -21,7 +21,7 @@ constexpr uint32_t STARTUP_DELAY_MS = 3000;
 constexpr uint32_t I2C_TIMEOUT_US = 30000;
 constexpr uint32_t DEFAULT_STREAM_PERIOD_MS = 200;
 constexpr std::size_t LINE_MAX = 64;
-constexpr int MAX_TOKENS = 4;
+constexpr int MAX_TOKENS = 5;
 
 // ---------------------------------------------------------------------------
 // Name <-> value tables, used both for parsing commands and printing status
@@ -75,6 +75,21 @@ constexpr Named<cfg::ClockSource> CLOCK_SOURCES[] = {
     {"stop", cfg::ClockSource::Stopped},
 };
 
+constexpr Named<cfg::LowPowerAccelRate> LOW_POWER_RATES[] = {
+    {"0.24", cfg::LowPowerAccelRate::Hz0_24},
+    {"0.49", cfg::LowPowerAccelRate::Hz0_49},
+    {"0.98", cfg::LowPowerAccelRate::Hz0_98},
+    {"1.95", cfg::LowPowerAccelRate::Hz1_95},
+    {"3.91", cfg::LowPowerAccelRate::Hz3_91},
+    {"7.81", cfg::LowPowerAccelRate::Hz7_81},
+    {"15.63", cfg::LowPowerAccelRate::Hz15_63},
+    {"31.25", cfg::LowPowerAccelRate::Hz31_25},
+    {"62.5", cfg::LowPowerAccelRate::Hz62_5},
+    {"125", cfg::LowPowerAccelRate::Hz125},
+    {"250", cfg::LowPowerAccelRate::Hz250},
+    {"500", cfg::LowPowerAccelRate::Hz500},
+};
+
 template <typename T, std::size_t N>
 const Named<T>* find_by_name(const Named<T> (&table)[N], const char* name) {
     for (const auto& entry : table) {
@@ -125,7 +140,8 @@ bool parse_on_off(const char* text, bool& value) {
     return false;
 }
 
-bool parse_uint(const char* text, long min, long max, long& value) {
+// Parses a whole integer (decimal, 0x.. hex, may be negative) within [min, max].
+bool parse_long(const char* text, long min, long max, long& value) {
     if (text == nullptr)
         return false;
     char* end = nullptr;
@@ -168,6 +184,8 @@ void print_axes(const cfg::EnabledAxes& a) {
 void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
     const Vec3 ao = imu.accel_offset();
     const Vec3 go = imu.gyro_offset();
+    const RawVec3 hw = imu.gyro_hw_offset();
+
     std::printf("--- status ---\n");
     std::printf("  accel     range +-%s g, filter %s\n",
                 name_of(ACCEL_RANGES, imu.accel_range()),
@@ -175,14 +193,21 @@ void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
     std::printf("  gyro      range +-%s dps, filter %s\n",
                 name_of(GYRO_RANGES, imu.gyro_range()),
                 name_of(GYRO_FILTERS, imu.gyro_filter()));
-    std::printf("  divider   %u (%u Hz when filter is 184..5 Hz)\n",
+    std::printf("  rate      divider %u (%s), gyro %.2f Hz, accel %.2f Hz\n",
                 imu.sample_divider(),
-                1000u / (imu.sample_divider() + 1u));
+                imu.divider_effective() ? "effective" : "ignored by current gyro filter",
+                imu.gyro_sample_rate_hz(),
+                imu.accel_sample_rate_hz());
     std::printf("  power     sleep=%s standby=%s temp=%s clock=%s\n",
                 on_off(imu.is_sleeping()),
                 on_off(imu.gyro_standby()),
                 on_off(imu.temperature_enabled()),
                 name_of(CLOCK_SOURCES, imu.clock_source()));
+    if (imu.is_low_power())
+        std::printf("  low power on, wake-up rate %s Hz (gyro off)\n",
+                    name_of(LOW_POWER_RATES, imu.low_power_rate()));
+    else
+        std::printf("  low power off\n");
     print_axes(imu.enabled_axes());
     std::printf("  offsets   accel %+.4f %+.4f %+.4f g | gyro %+.3f %+.3f %+.3f dps\n",
                 ao.x,
@@ -191,6 +216,7 @@ void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
                 go.x,
                 go.y,
                 go.z);
+    std::printf("  hw offset gyro %d %d %d (raw)\n", hw.x, hw.y, hw.z);
     std::printf("  stream    %s, every %lu ms\n",
                 on_off(state.streaming),
                 static_cast<unsigned long>(state.stream_period_ms));
@@ -215,6 +241,7 @@ void print_help() {
     std::printf("  gfilter <hz>                 :");
     print_options(GYRO_FILTERS);
     std::printf("  div <0..255>                  sample rate divider\n");
+    std::printf("  hz <4..1000>                  sample rate in Hz (gyro filter 184..5)\n");
     std::printf("\n");
     std::printf("  sleep on|off                  whole chip sleep\n");
     std::printf("  standby on|off                gyro standby\n");
@@ -222,10 +249,17 @@ void print_help() {
     std::printf("  clock <src>                  :");
     print_options(CLOCK_SOURCES);
     std::printf("  axis ax|ay|az|gx|gy|gz on|off enable/disable one axis\n");
+    std::printf("  lp <hz>                      :");
+    print_options(LOW_POWER_RATES);
+    std::printf("  lp off                        leave low-power accel mode\n");
+    std::printf("\n");
+    std::printf("  sigreset [g] [a] [t]          reset signal paths (none given = all)\n");
+    std::printf("  sensreset                     reset all paths and clear data registers\n");
     std::printf("\n");
     std::printf("  calgyro                       gyro calibration (keep still)\n");
     std::printf("  calaccel                      accel calibration (flat, Z up)\n");
-    std::printf("  clear                         clear all offsets\n");
+    std::printf("  clear                         clear software offsets\n");
+    std::printf("  ghwoff <x> <y> <z>            gyro hardware offset, raw units\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -298,6 +332,7 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
     const char* cmd = tokens[0];
     const char* arg1 = count > 1 ? tokens[1] : nullptr;
     const char* arg2 = count > 2 ? tokens[2] : nullptr;
+    const char* arg3 = count > 3 ? tokens[3] : nullptr;
 
     // --- general -------------------------------------------------------------
     if (std::strcmp(cmd, "help") == 0) {
@@ -328,7 +363,7 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         std::printf("stream %s\n", on_off(on));
     } else if (std::strcmp(cmd, "rate") == 0) {
         long ms = 0;
-        if (!parse_uint(arg1, 10, 5000, ms)) {
+        if (!parse_long(arg1, 10, 5000, ms)) {
             std::printf("usage: rate <10..5000>\n");
             return;
         }
@@ -368,14 +403,30 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
             return;
         }
         print_result("set_gyro_filter", imu.set_gyro_filter(entry->value));
+        if (!imu.divider_effective())
+            std::printf("note: divider is ignored with this filter, gyro runs at %.0f Hz\n",
+                        imu.gyro_sample_rate_hz());
     } else if (std::strcmp(cmd, "div") == 0) {
         long divider = 0;
-        if (!parse_uint(arg1, 0, 255, divider)) {
+        if (!parse_long(arg1, 0, 255, divider)) {
             std::printf("usage: div <0..255>\n");
             return;
         }
         print_result("set_sample_rate_divider",
                      imu.set_sample_rate_divider(static_cast<uint8_t>(divider)));
+    } else if (std::strcmp(cmd, "hz") == 0) {
+        long hz = 0;
+        if (!parse_long(arg1, 4, 1000, hz)) {
+            std::printf("usage: hz <4..1000>\n");
+            return;
+        }
+        if (!imu.divider_effective())
+            std::printf("divider is ignored by the current gyro filter, use gfilter 184..5\n");
+        print_result("set_sample_rate_hz", imu.set_sample_rate_hz(static_cast<uint16_t>(hz)));
+        std::printf("divider %u, real rate gyro %.2f Hz, accel %.2f Hz\n",
+                    imu.sample_divider(),
+                    imu.gyro_sample_rate_hz(),
+                    imu.accel_sample_rate_hz());
 
         // --- power -----------------------------------------------------------
     } else if (std::strcmp(cmd, "sleep") == 0) {
@@ -420,6 +471,47 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         }
         print_result("set_enabled_axes", imu.set_enabled_axes(axes));
         print_axes(imu.enabled_axes());
+    } else if (std::strcmp(cmd, "lp") == 0) {
+        if (arg1 != nullptr && std::strcmp(arg1, "off") == 0) {
+            print_result("exit_low_power_accel", imu.exit_low_power_accel());
+            return;
+        }
+        const auto* entry = arg1 ? find_by_name(LOW_POWER_RATES, arg1) : nullptr;
+        if (entry == nullptr) {
+            std::printf("usage: lp off | lp");
+            print_options(LOW_POWER_RATES);
+            return;
+        }
+        print_result("enter_low_power_accel", imu.enter_low_power_accel(entry->value));
+        if (imu.is_low_power())
+            std::printf("accel updates at %s Hz, gyro is off\n", entry->name);
+
+        // --- resets ----------------------------------------------------------
+    } else if (std::strcmp(cmd, "sigreset") == 0) {
+        bool gyro = false;
+        bool accel = false;
+        bool temp = false;
+        const char* args[] = {arg1, arg2, arg3};
+        for (const char* arg : args) {
+            if (arg == nullptr)
+                continue;
+            if (std::strcmp(arg, "g") == 0)
+                gyro = true;
+            else if (std::strcmp(arg, "a") == 0)
+                accel = true;
+            else if (std::strcmp(arg, "t") == 0)
+                temp = true;
+            else {
+                std::printf("usage: sigreset [g] [a] [t]\n");
+                return;
+            }
+        }
+        if (!gyro && !accel && !temp)
+            gyro = accel = temp = true;
+        print_result("reset_signal_paths", imu.reset_signal_paths(gyro, accel, temp));
+        std::printf("reset: gyro=%s accel=%s temp=%s\n", on_off(gyro), on_off(accel), on_off(temp));
+    } else if (std::strcmp(cmd, "sensreset") == 0) {
+        print_result("reset_sensor_registers", imu.reset_sensor_registers());
 
         // --- calibration -----------------------------------------------------
     } else if (std::strcmp(cmd, "calgyro") == 0) {
@@ -434,7 +526,21 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         std::printf("accel offset %+.4f %+.4f %+.4f g\n", o.x, o.y, o.z);
     } else if (std::strcmp(cmd, "clear") == 0) {
         imu.clear_offsets();
-        std::printf("offsets cleared\n");
+        std::printf("software offsets cleared\n");
+    } else if (std::strcmp(cmd, "ghwoff") == 0) {
+        long x = 0;
+        long y = 0;
+        long z = 0;
+        if (!parse_long(arg1, -32768, 32767, x) || !parse_long(arg2, -32768, 32767, y) ||
+            !parse_long(arg3, -32768, 32767, z)) {
+            const RawVec3 hw = imu.gyro_hw_offset();
+            std::printf("gyro hw offset %d %d %d (raw)\n", hw.x, hw.y, hw.z);
+            std::printf("usage: ghwoff <x> <y> <z>   (-32768..32767)\n");
+            return;
+        }
+        const RawVec3 offset{static_cast<int16_t>(x), static_cast<int16_t>(y),
+                             static_cast<int16_t>(z)};
+        print_result("set_gyro_hw_offset", imu.set_gyro_hw_offset(offset));
     } else {
         std::printf("unknown command '%s', type 'help'\n", cmd);
     }

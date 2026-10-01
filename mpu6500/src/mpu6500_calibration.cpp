@@ -33,6 +33,8 @@ Status Mpu6500::measure_mean(calibration::Sensor sensor,
 
     switch (sensor) {
         case calibration::Sensor::Gyro:
+            if (low_mode_)
+                return Status::ERROR;
             return measure_mean_impl(
                 &Mpu6500::read_gyro_raw, mean, options, hz_to_period_ms(gyro_sample_rate_hz()));
         case calibration::Sensor::Accel:

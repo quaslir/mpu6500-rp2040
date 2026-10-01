@@ -90,6 +90,10 @@ public:
 
     [[nodiscard]] Status set_gyro_hw_offset(const RawVec3& offset);
     [[nodiscard]] RawVec3 gyro_hw_offset() const;
+    [[nodiscard]] Status enter_low_power_accel(config::LowPowerAccelRate rate);
+    [[nodiscard]] Status exit_low_power_accel();
+    [[nodiscard]] bool is_low_power() const;
+    [[nodiscard]] config::LowPowerAccelRate low_power_rate() const;
 
 private:
     using ReadVec3Fn = Status (Mpu6500::*)(Vec3&) const;
@@ -97,6 +101,11 @@ private:
                                            Vec3& mean,
                                            const calibration::MeasureOptions& options,
                                            uint32_t period_ms) const;
+    struct LowPowerBackup {
+        config::AccelFilter accel_filter = config::AccelFilter::Hz460;
+        bool temperature_enabled = true;
+        config::EnabledAxes enabled_axes{};
+    };
     detail::Mpu6500Regs regs_;
     WaitFunction wait_;
     bool use_i2c_;
@@ -113,5 +122,8 @@ private:
     bool temperature_enabled_;
     bool gyro_standby_;
     RawVec3 gyro_hw_offset_;
+    bool low_mode_;
+    config::LowPowerAccelRate low_power_rate_;
+    LowPowerBackup low_power_backup_;
 };
 } // namespace mpu6500

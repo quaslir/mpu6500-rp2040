@@ -165,4 +165,12 @@ Status Mpu6500Regs::write_int16(uint8_t high_reg, uint8_t low_reg, int16_t data)
     return bus_.write_reg(low_reg, static_cast<uint8_t>(converted & 0xff));
 }
 
+
+Status Mpu6500Regs::write_lp_accel_rate(config::LowPowerAccelRate rate_hz) {
+return update_bits(reg::LP_ACCEL_ODR, bits::lp_accel_odr::LPOSC_CLKSEL_MASK, static_cast<uint8_t>(rate_hz));
+}
+Status Mpu6500Regs::write_cycle(bool enabled) {
+    return update_bits(reg::PWR_MGMT_1, bits::pwr_mgmt_1::CYCLE, enabled ? bits::pwr_mgmt_1::CYCLE : 0);
+}
+
 } // namespace mpu6500::detail

@@ -39,4 +39,6 @@ inline constexpr uint8_t YG_OFFSET_H{0x15};
 inline constexpr uint8_t YG_OFFSET_L{0x16};
 inline constexpr uint8_t ZG_OFFSET_H{0x17};
 inline constexpr uint8_t ZG_OFFSET_L{0x18};
+
+inline constexpr uint8_t LP_ACCEL_ODR{0x1E};
 } // namespace mpu6500::reg

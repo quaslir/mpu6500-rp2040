@@ -8,6 +8,38 @@
 #include <cmath>
 #include <cstdint>
 
+namespace {
+    float low_power_rate_to_hz(mpu6500::config::LowPowerAccelRate rate) {
+        using mpu6500::config::LowPowerAccelRate;
+        switch (rate) {
+            case LowPowerAccelRate::Hz0_24:
+                return 0.24f;
+            case LowPowerAccelRate::Hz0_49:
+                return 0.49f;
+            case LowPowerAccelRate::Hz0_98:
+                return 0.98f;
+            case LowPowerAccelRate::Hz1_95:
+                return 1.95f;
+            case LowPowerAccelRate::Hz3_91:
+                return 3.91f;
+            case LowPowerAccelRate::Hz7_81:
+                return 7.81f;
+            case LowPowerAccelRate::Hz15_63:
+                return 15.63f;
+            case LowPowerAccelRate::Hz31_25:
+                return 31.25f;
+            case LowPowerAccelRate::Hz62_5:
+                return 62.5f;
+            case LowPowerAccelRate::Hz125:
+                return 125.0f;
+            case LowPowerAccelRate::Hz250:
+                return 250.0f;
+            case LowPowerAccelRate::Hz500:
+                return 500.0f;
+        }
+        return 0.24f;
+    }
+}
 namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
     : regs_(bus), wait_(wait), use_i2c_(config.use_i2c),
@@ -18,7 +50,8 @@ Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
       sleeping_(false), clock_source_(config.starting_clock_source),
       enabled_axes_(config.starting_enabled_axes),
       temperature_enabled_(config.starting_temperature_enabled),
-      gyro_standby_(config.starting_gyro_standby), gyro_hw_offset_(config.starting_gyro_hw_offset) {
+      gyro_standby_(config.starting_gyro_standby), gyro_hw_offset_(config.starting_gyro_hw_offset),
+     low_mode_(false), low_power_rate_(config::LowPowerAccelRate::Hz0_24) ,low_power_backup_({}) {
 }
 
 Status Mpu6500::who_am_i(uint8_t& id) {
@@ -26,17 +59,26 @@ Status Mpu6500::who_am_i(uint8_t& id) {
 }
 
 Status Mpu6500::init() {
+
     uint8_t id{};
     const Status who_am_i_result = who_am_i(id);
     if (who_am_i_result != Status::OK)
         return who_am_i_result;
     if (id != device::EXPECTED_ID)
         return Status::ERROR;
-
     const Status reset_result = regs_.device_reset();
     if (reset_result != Status::OK)
         return reset_result;
     wait_(device::RESET_WAIT_MS);
+
+
+    if(low_mode_) {
+        accel_filter_ = low_power_backup_.accel_filter;
+        temperature_enabled_ = low_power_backup_.temperature_enabled;
+        enabled_axes_ = low_power_backup_.enabled_axes;
+
+        low_mode_ = false;
+    }
 
     const Status signal_path_reset_result = regs_.signal_path_reset();
     if (signal_path_reset_result != Status::OK)
@@ -110,6 +152,7 @@ Status Mpu6500::reset_sensor_registers() {
 }
 
 float Mpu6500::gyro_sample_rate_hz() const {
+    if(low_mode_) return 0.0f;
     switch (gyro_filter_) {
         case config::GyroFilter::Bypass3600Hz:
         case config::GyroFilter::Bypass8800Hz:
@@ -123,12 +166,16 @@ float Mpu6500::gyro_sample_rate_hz() const {
     }
 }
 float Mpu6500::accel_sample_rate_hz() const {
+    if(low_mode_) {
+        return low_power_rate_to_hz(low_power_rate_);
+    } else {
     switch (accel_filter_) {
         case config::AccelFilter::Bypass1130Hz:
             return device::ACCEL_RATE_BYPASS_HZ;
         default:
             return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
                    static_cast<float>((1 + sample_divider_));
+    }
     }
 }
 bool Mpu6500::divider_effective() const {

@@ -32,6 +32,22 @@ enum class AccelFilter : uint8_t {
 };
 
 enum class ClockSource : uint8_t { Internal20MHz = 0, Auto = 1, Stopped = 7 };
+
+enum class LowPowerAccelRate : uint8_t {
+    Hz0_24 = 0,
+    Hz0_49 = 1,
+    Hz0_98 = 2,
+    Hz1_95 = 3,
+    Hz3_91 = 4,
+    Hz7_81 = 5,
+    Hz15_63 = 6,
+    Hz31_25 = 7,
+    Hz62_5 = 8,
+    Hz125 = 9,
+    Hz250 = 10,
+    Hz500 = 11
+};
+
 struct EnabledAxes {
     bool accel_x = true;
     bool accel_y = true;
@@ -50,7 +66,7 @@ struct Config {
     uint8_t starting_sample_divider = 0;
     Vec3 starting_accel_offset{};
     Vec3 starting_gyro_offset{};
-    ClockSource starting_clock_source{};
+    ClockSource starting_clock_source = ClockSource::Auto;
     EnabledAxes starting_enabled_axes{};
     bool starting_temperature_enabled{};
     bool starting_gyro_standby{};

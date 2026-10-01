@@ -70,4 +70,7 @@ inline constexpr uint8_t FCHOICE_B_BYPASS_3600HZ{0x02};
 inline constexpr uint8_t FCHOICE_B_USE_DLPF{0x00};
 } // namespace gyro_config
 
+namespace lp_accel_odr {
+inline constexpr uint8_t LPOSC_CLKSEL_MASK{0x0F}; // bits 3:0, wake-up rate code 0..11
+} // namespace lp_accel_odr
 } // namespace mpu6500::bits
