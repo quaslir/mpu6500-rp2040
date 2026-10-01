@@ -1,5 +1,9 @@
 #pragma once
 #include <algorithm>
+#include <cstdint>
+struct RawVec3 {
+    int16_t x{}, y{}, z{};
+};
 struct Vec3 {
     float x{}, y{}, z{};
 
