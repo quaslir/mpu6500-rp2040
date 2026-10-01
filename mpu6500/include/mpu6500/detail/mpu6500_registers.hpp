@@ -38,11 +38,11 @@ public:
 
     [[nodiscard]] Status write_signal_path_reset(bool gyro, bool accel, bool temp);
     [[nodiscard]] Status write_sensor_reset();
-    [[nodiscard]] Status read_gyro_hw_offset(RawVec3& offset) const;
     [[nodiscard]] Status write_gyro_hw_offset(const RawVec3& offset);
 
 private:
     [[nodiscard]] Status update_bits(uint8_t reg, uint8_t mask, uint8_t data);
+    [[nodiscard]] Status write_int16(uint8_t high_reg, uint8_t low_reg, int16_t data);
     bus::Bus& bus_;
 };
 } // namespace mpu6500::detail
