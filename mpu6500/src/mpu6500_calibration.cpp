@@ -135,4 +135,17 @@ Status Mpu6500::calibrate_accel(const Vec3& expected_gravity_g,
     return Status::OK;
 }
 
+Status Mpu6500::set_gyro_hw_offset(const RawVec3& offset) {
+    const Status set_gyro_hw_offset_result = regs_.write_gyro_hw_offset(offset);
+    if (set_gyro_hw_offset_result != Status::OK)
+        return set_gyro_hw_offset_result;
+
+    gyro_hw_offset_ = offset;
+
+    return Status::OK;
+}
+RawVec3 Mpu6500::gyro_hw_offset() const {
+    return gyro_hw_offset_;
+}
+
 } // namespace mpu6500

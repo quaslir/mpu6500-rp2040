@@ -54,6 +54,7 @@ struct Config {
     EnabledAxes starting_enabled_axes{};
     bool starting_temperature_enabled{};
     bool starting_gyro_standby{};
+    RawVec3 starting_gyro_hw_offset{};
 };
 
 } // namespace mpu6500::config

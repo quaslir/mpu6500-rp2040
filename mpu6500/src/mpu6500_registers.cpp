@@ -144,23 +144,24 @@ Status Mpu6500Regs::write_sensor_reset() {
         reg::USER_CTRL, bits::user_ctrl::SIG_COND_RST, bits::user_ctrl::SIG_COND_RST);
 }
 
-
 Status Mpu6500Regs::write_gyro_hw_offset(const RawVec3& offset) {
-const Status write_x_result = write_int16(reg::XG_OFFSET_H, reg::XG_OFFSET_L, offset.x);
-if(write_x_result != Status::OK) return write_x_result;
+    const Status write_x_result = write_int16(reg::XG_OFFSET_H, reg::XG_OFFSET_L, offset.x);
+    if (write_x_result != Status::OK)
+        return write_x_result;
 
-const Status write_y_result = write_int16(reg::YG_OFFSET_H, reg::YG_OFFSET_L, offset.y);
-if(write_y_result != Status::OK) return write_y_result;
+    const Status write_y_result = write_int16(reg::YG_OFFSET_H, reg::YG_OFFSET_L, offset.y);
+    if (write_y_result != Status::OK)
+        return write_y_result;
 
-
-return write_int16(reg::ZG_OFFSET_H, reg::ZG_OFFSET_L, offset.z);
+    return write_int16(reg::ZG_OFFSET_H, reg::ZG_OFFSET_L, offset.z);
 }
 
 Status Mpu6500Regs::write_int16(uint8_t high_reg, uint8_t low_reg, int16_t data) {
     const uint16_t converted = static_cast<uint16_t>(data);
 
     const Status high_reg_result = bus_.write_reg(high_reg, static_cast<uint8_t>(converted >> 8));
-    if(high_reg_result != Status::OK) return high_reg_result;
+    if (high_reg_result != Status::OK)
+        return high_reg_result;
     return bus_.write_reg(low_reg, static_cast<uint8_t>(converted & 0xff));
 }
 

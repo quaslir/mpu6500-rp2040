@@ -18,7 +18,8 @@ Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
       sleeping_(false), clock_source_(config.starting_clock_source),
       enabled_axes_(config.starting_enabled_axes),
       temperature_enabled_(config.starting_temperature_enabled),
-      gyro_standby_(config.starting_gyro_standby) {}
+      gyro_standby_(config.starting_gyro_standby), gyro_hw_offset_(config.starting_gyro_hw_offset) {
+}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return regs_.read_who_am_i(id);
@@ -94,6 +95,10 @@ Status Mpu6500::init() {
     if (set_sample_divider_result != Status::OK)
         return set_sample_divider_result;
 
+    const Status set_gyro_hw_offset_result = set_gyro_hw_offset(gyro_hw_offset_);
+    if (set_gyro_hw_offset_result != Status::OK)
+        return set_gyro_hw_offset_result;
+
     return Status::OK;
 }
 
@@ -143,7 +148,9 @@ Status Mpu6500::set_sample_rate_hz(uint16_t hz) {
         return Status::ERROR;
     if (hz < device::MIN_DIVIDED_RATE_HZ || hz > device::INTERNAL_SAMPLE_RATE_HZ)
         return Status::ERROR;
-    uint8_t divider = static_cast<uint8_t>(std::lround(static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) / static_cast<float>(hz)) - 1);
+    uint8_t divider = static_cast<uint8_t>(
+        std::lround(static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) / static_cast<float>(hz)) -
+        1);
     return set_sample_rate_divider(divider);
 }
 } // namespace mpu6500

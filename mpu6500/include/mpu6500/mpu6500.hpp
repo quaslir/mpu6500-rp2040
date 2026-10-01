@@ -88,6 +88,9 @@ public:
     [[nodiscard]] bool divider_effective() const;
     [[nodiscard]] Status set_sample_rate_hz(uint16_t sample_rate);
 
+    [[nodiscard]] Status set_gyro_hw_offset(const RawVec3& offset);
+    [[nodiscard]] RawVec3 gyro_hw_offset() const;
+
 private:
     using ReadVec3Fn = Status (Mpu6500::*)(Vec3&) const;
     [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,
@@ -108,7 +111,7 @@ private:
     config::ClockSource clock_source_;
     config::EnabledAxes enabled_axes_;
     bool temperature_enabled_;
-
     bool gyro_standby_;
+    RawVec3 gyro_hw_offset_;
 };
 } // namespace mpu6500
