@@ -101,29 +101,19 @@ private:
                                            Vec3& mean,
                                            const calibration::MeasureOptions& options,
                                            uint32_t period_ms) const;
-    struct LowPowerBackup {
-        config::AccelFilter accel_filter = config::AccelFilter::Hz460;
-        bool temperature_enabled = true;
-        config::EnabledAxes enabled_axes{};
-    };
+
     detail::Mpu6500Regs regs_;
     WaitFunction wait_;
     bool use_i2c_;
-    config::AccelRange accel_range_;
-    config::GyroRange gyro_range_;
-    config::AccelFilter accel_filter_;
-    config::GyroFilter gyro_filter_;
+    config::Accel accel_;
+    config::Gyro gyro_;
     uint8_t sample_divider_;
-    Vec3 accel_offset_;
-    Vec3 gyro_offset_;
+
     bool sleeping_;
     config::ClockSource clock_source_;
     config::EnabledAxes enabled_axes_;
     bool temperature_enabled_;
-    bool gyro_standby_;
-    RawVec3 gyro_hw_offset_;
-    bool low_mode_;
-    config::LowPowerAccelRate low_power_rate_;
-    LowPowerBackup low_power_backup_;
+
+    config::LowPowerMode low_mode_;
 };
 } // namespace mpu6500

@@ -2,9 +2,8 @@
 
 #include "bits.hpp"
 #include "bus/bus.hpp"
-#include "layout.hpp"
+#include "bus/status.hpp"
 #include "registers.hpp"
-#include <array>
 #include <cstdint>
 #include <span>
 namespace mpu6500::detail {
@@ -13,10 +12,7 @@ Mpu6500Regs::Mpu6500Regs(bus::Bus& bus) : bus_(bus) {}
 
 Status Mpu6500Regs::update_bits(uint8_t reg, uint8_t mask, uint8_t data) {
     uint8_t current{};
-    const Status read_current_result = bus_.read_regs(reg, std::span<uint8_t>(&current, 1));
-    if (read_current_result != Status::OK) {
-        return read_current_result;
-    }
+    MPU_RETURN_IF_ERROR(bus_.read_regs(reg, std::span<uint8_t>(&current, 1)));
     const uint8_t updated = static_cast<uint8_t>((current & ~mask) | (data & mask));
     return bus_.write_reg(reg, updated);
 }
@@ -57,26 +53,17 @@ Status Mpu6500Regs::write_gyro_filter(config::GyroFilter filter) {
             const uint8_t data = filter == config::GyroFilter::Bypass3600Hz
                                      ? bits::gyro_config::FCHOICE_B_BYPASS_3600HZ
                                      : bits::gyro_config::FCHOICE_B_BYPASS_8800HZ;
-            const Status set_gyro_bypass_result =
-                update_bits(reg::GYRO_CONFIG, bits::gyro_config::FCHOICE_B_MASK, data);
-            if (set_gyro_bypass_result != Status::OK)
-                return set_gyro_bypass_result;
+            MPU_RETURN_IF_ERROR(
+                update_bits(reg::GYRO_CONFIG, bits::gyro_config::FCHOICE_B_MASK, data));
             break;
         }
-        default: {
-            const Status set_gyro_bypass_result =
-                update_bits(reg::GYRO_CONFIG,
-                            bits::gyro_config::FCHOICE_B_MASK,
-                            bits::gyro_config::FCHOICE_B_USE_DLPF);
-            if (set_gyro_bypass_result != Status::OK)
-                return set_gyro_bypass_result;
-            const Status set_gyro_filter_result =
-                update_bits(reg::CONFIG, bits::config::DLPF_CFG_MASK, static_cast<uint8_t>(filter));
-            if (set_gyro_filter_result != Status::OK) {
-                return set_gyro_filter_result;
-            }
+        default:
+            MPU_RETURN_IF_ERROR(update_bits(reg::GYRO_CONFIG,
+                                            bits::gyro_config::FCHOICE_B_MASK,
+                                            bits::gyro_config::FCHOICE_B_USE_DLPF));
+            MPU_RETURN_IF_ERROR(update_bits(
+                reg::CONFIG, bits::config::DLPF_CFG_MASK, static_cast<uint8_t>(filter)));
             break;
-        }
     }
 
     return Status::OK;
@@ -145,23 +132,15 @@ Status Mpu6500Regs::write_sensor_reset() {
 }
 
 Status Mpu6500Regs::write_gyro_hw_offset(const RawVec3& offset) {
-    const Status write_x_result = write_int16(reg::XG_OFFSET_H, reg::XG_OFFSET_L, offset.x);
-    if (write_x_result != Status::OK)
-        return write_x_result;
-
-    const Status write_y_result = write_int16(reg::YG_OFFSET_H, reg::YG_OFFSET_L, offset.y);
-    if (write_y_result != Status::OK)
-        return write_y_result;
+    MPU_RETURN_IF_ERROR(write_int16(reg::XG_OFFSET_H, reg::XG_OFFSET_L, offset.x));
+    MPU_RETURN_IF_ERROR(write_int16(reg::YG_OFFSET_H, reg::YG_OFFSET_L, offset.y));
 
     return write_int16(reg::ZG_OFFSET_H, reg::ZG_OFFSET_L, offset.z);
 }
 
 Status Mpu6500Regs::write_int16(uint8_t high_reg, uint8_t low_reg, int16_t data) {
     const uint16_t converted = static_cast<uint16_t>(data);
-
-    const Status high_reg_result = bus_.write_reg(high_reg, static_cast<uint8_t>(converted >> 8));
-    if (high_reg_result != Status::OK)
-        return high_reg_result;
+    MPU_RETURN_IF_ERROR(bus_.write_reg(high_reg, static_cast<uint8_t>(converted >> 8)));
     return bus_.write_reg(low_reg, static_cast<uint8_t>(converted & 0xff));
 }
 

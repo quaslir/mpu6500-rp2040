@@ -1,25 +1,26 @@
+#include "bus/status.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 namespace mpu6500 {
 void Mpu6500::set_accel_offset(const Vec3& offset) {
-    accel_offset_ = offset;
+    accel_.offset = offset;
 }
 void Mpu6500::set_gyro_offset(const Vec3& offset) {
-    gyro_offset_ = offset;
+    gyro_.offset = offset;
 }
 
 const Vec3& Mpu6500::accel_offset() const {
-    return accel_offset_;
+    return accel_.offset;
 }
 const Vec3& Mpu6500::gyro_offset() const {
-    return gyro_offset_;
+    return gyro_.offset;
 }
 
 void Mpu6500::clear_offsets() {
-    accel_offset_ = Vec3{};
-    gyro_offset_ = Vec3{};
+    accel_.offset = Vec3{};
+    gyro_.offset = Vec3{};
 }
 
 Status Mpu6500::measure_mean(calibration::Sensor sensor,
@@ -33,7 +34,7 @@ Status Mpu6500::measure_mean(calibration::Sensor sensor,
 
     switch (sensor) {
         case calibration::Sensor::Gyro:
-            if (low_mode_)
+            if (low_mode_.active)
                 return Status::ERROR;
             return measure_mean_impl(
                 &Mpu6500::read_gyro_raw, mean, options, hz_to_period_ms(gyro_sample_rate_hz()));
@@ -54,29 +55,21 @@ Status Mpu6500::measure_mean_impl(ReadVec3Fn func,
     auto warm_up = [func, this, period_ms](uint16_t samples) -> Status {
         Vec3 sample{};
         for (uint16_t i = 0; i < samples; i++) {
-            const Status read_result = (this->*func)(sample);
-            if (read_result != Status::OK)
-                return read_result;
+            MPU_RETURN_IF_ERROR((this->*func)(sample));
             wait_(period_ms);
         }
 
         return Status::OK;
     };
 
-    const Status warm_up_status = warm_up(options.warmup_samples);
-    if (warm_up_status != Status::OK)
-        return warm_up_status;
+    MPU_RETURN_IF_ERROR(warm_up(options.warmup_samples));
     Vec3 sample{}, sum{};
-    const Status read_result_first = (this->*func)(sample);
-    if (read_result_first != Status::OK)
-        return read_result_first;
+    MPU_RETURN_IF_ERROR((this->*func)(sample));
     Vec3 min_value = sample;
     Vec3 max_value = sample;
     wait_(period_ms);
     for (uint16_t i = 0; i < options.samples; i++) {
-        const Status read_result = (this->*func)(sample);
-        if (read_result != Status::OK)
-            return read_result;
+        MPU_RETURN_IF_ERROR((this->*func)(sample));
         sum += sample;
         min_value = component_min(min_value, sample);
         max_value = component_max(max_value, sample);
@@ -100,9 +93,7 @@ Status Mpu6500::measure_gyro_offset(Vec3& offset,
 }
 Status Mpu6500::calibrate_gyro(const calibration::MeasureOptions& options) {
     Vec3 offset{};
-    const Status measure_gyro_result = measure_gyro_offset(offset, options);
-    if (measure_gyro_result != Status::OK)
-        return measure_gyro_result;
+    MPU_RETURN_IF_ERROR(measure_gyro_offset(offset, options));
 
     set_gyro_offset(offset);
     return Status::OK;
@@ -112,10 +103,7 @@ Status Mpu6500::measure_accel_offset(Vec3& offset,
                                      const Vec3& expected_gravity_g,
                                      const calibration::MeasureOptions& options) const {
     Vec3 mean{};
-    const Status measure_mean_result = measure_mean(calibration::Sensor::Accel, mean, options);
-    if (measure_mean_result != Status::OK) {
-        return measure_mean_result;
-    }
+    MPU_RETURN_IF_ERROR(measure_mean(calibration::Sensor::Accel, mean, options));
 
     const float magnitude = std::sqrt(mean.x * mean.x + mean.y * mean.y + mean.z * mean.z);
     if (magnitude < calibration::MIN_GRAVITY_G || magnitude > calibration::MAX_GRAVITY_G) {
@@ -129,25 +117,21 @@ Status Mpu6500::measure_accel_offset(Vec3& offset,
 Status Mpu6500::calibrate_accel(const Vec3& expected_gravity_g,
                                 const calibration::MeasureOptions& options) {
     Vec3 offset{};
-    const Status measure_accel_result = measure_accel_offset(offset, expected_gravity_g, options);
-    if (measure_accel_result != Status::OK)
-        return measure_accel_result;
+    MPU_RETURN_IF_ERROR(measure_accel_offset(offset, expected_gravity_g, options));
 
     set_accel_offset(offset);
     return Status::OK;
 }
 
 Status Mpu6500::set_gyro_hw_offset(const RawVec3& offset) {
-    const Status set_gyro_hw_offset_result = regs_.write_gyro_hw_offset(offset);
-    if (set_gyro_hw_offset_result != Status::OK)
-        return set_gyro_hw_offset_result;
+    MPU_RETURN_IF_ERROR(regs_.write_gyro_hw_offset(offset));
 
-    gyro_hw_offset_ = offset;
+    gyro_.hw_offset = offset;
 
     return Status::OK;
 }
 RawVec3 Mpu6500::gyro_hw_offset() const {
-    return gyro_hw_offset_;
+    return gyro_.hw_offset;
 }
 
 } // namespace mpu6500

@@ -57,20 +57,40 @@ struct EnabledAxes {
     bool gyro_z = true;
 };
 
+struct LowPowerBackup {
+    config::AccelFilter accel_filter = config::AccelFilter::Hz460;
+    bool temperature_enabled{};
+    config::EnabledAxes enabled_axes{};
+};
+
+struct LowPowerMode {
+    bool active{};
+    config::LowPowerAccelRate rate{LowPowerAccelRate::Hz0_24};
+    LowPowerBackup backup{};
+};
+
+struct Accel {
+    AccelRange range = AccelRange::G2;
+    AccelFilter filter = AccelFilter::Hz460;
+    Vec3 offset{};
+};
+
+struct Gyro {
+    bool standby{};
+    RawVec3 hw_offset{};
+    Vec3 offset{};
+    GyroRange range{GyroRange::Dps250};
+    GyroFilter filter{GyroFilter::Hz250};
+};
+
 struct Config {
     bool use_i2c = true;
-    AccelRange starting_accelerometer_range = AccelRange::G2;
-    GyroRange starting_gyroscope_range = GyroRange::Dps250;
-    AccelFilter starting_accel_filter = AccelFilter::Hz460;
-    GyroFilter starting_gyro_filter = GyroFilter::Hz250;
+    Accel starting_accel_params{};
+    Gyro starting_gyro_params{};
     uint8_t starting_sample_divider = 0;
-    Vec3 starting_accel_offset{};
-    Vec3 starting_gyro_offset{};
     ClockSource starting_clock_source = ClockSource::Auto;
     EnabledAxes starting_enabled_axes{};
     bool starting_temperature_enabled{};
-    bool starting_gyro_standby{};
-    RawVec3 starting_gyro_hw_offset{};
 };
 
 } // namespace mpu6500::config

@@ -558,8 +558,8 @@ int main() {
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, I2C_TIMEOUT_US};
 
     cfg::Config config{};
-    config.starting_gyro_filter = cfg::GyroFilter::Hz41;
-    config.starting_accel_filter = cfg::AccelFilter::Hz41;
+    config.starting_gyro_params.filter = cfg::GyroFilter::Hz41;
+    config.starting_accel_params.filter = cfg::AccelFilter::Hz41;
     config.starting_sample_divider = 9;
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);

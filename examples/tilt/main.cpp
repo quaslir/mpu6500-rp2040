@@ -6,7 +6,6 @@
 #include "i2c_config.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include "orientation.hpp"
-
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -19,9 +18,9 @@ namespace cfg = mpu6500::config;
 constexpr uint32_t STARTUP_DELAY_MS = 3000;
 constexpr uint32_t I2C_TIMEOUT_US = 30000;
 
-constexpr uint8_t SAMPLE_DIVIDER = 9;          // 1000 / (1 + 9) = 100 Hz
-constexpr uint32_t LOOP_PERIOD_US = 10000;     // read every 10 ms, matches 100 Hz
-constexpr int PRINT_EVERY = 10;                // print every 10th loop -> 10 lines per second
+constexpr uint8_t SAMPLE_DIVIDER = 9;      // 1000 / (1 + 9) = 100 Hz
+constexpr uint32_t LOOP_PERIOD_US = 10000; // read every 10 ms, matches 100 Hz
+constexpr int PRINT_EVERY = 10;            // print every 10th loop -> 10 lines per second
 
 constexpr int CALIBRATION_ATTEMPTS = 3;
 constexpr int COUNTDOWN_S = 3;
@@ -80,7 +79,6 @@ Status calibrate_accel_with_retries(mpu6500::Mpu6500& imu) {
     return status;
 }
 
-
 } // namespace
 
 int main() {
@@ -94,8 +92,8 @@ int main() {
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, I2C_TIMEOUT_US};
 
     cfg::Config config{};
-    config.starting_gyro_filter = cfg::GyroFilter::Hz41;
-    config.starting_accel_filter = cfg::AccelFilter::Hz41;
+    config.starting_gyro_params.filter = cfg::GyroFilter::Hz41;
+    config.starting_accel_params.filter = cfg::AccelFilter::Hz41;
     config.starting_sample_divider = SAMPLE_DIVIDER;
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
@@ -112,34 +110,39 @@ int main() {
     if (calibration_status != Status::OK)
         example::halt("gyro calibration failed", calibration_status);
     const Vec3 gyro_offset = imu.gyro_offset();
-    std::printf("  gyro offset %+.3f %+.3f %+.3f dps\n", gyro_offset.x, gyro_offset.y,
-                gyro_offset.z);
+    std::printf(
+        "  gyro offset %+.3f %+.3f %+.3f dps\n", gyro_offset.x, gyro_offset.y, gyro_offset.z);
 
     // --- accel calibration (removes the ~0.14 g Z offset and zeroes the level) -
     Vec3 accel_before{};
     if (imu.read_accel(accel_before) == Status::OK) {
         const orientation::Angles before = orientation::tilt_from_accel(accel_before);
         std::printf("\n  before accel calibration: roll %+.2f, pitch %+.2f deg, |a| %.3f g\n",
-                    before.roll_deg, before.pitch_deg, magnitude(accel_before));
+                    before.roll_deg,
+                    before.pitch_deg,
+                    magnitude(accel_before));
     }
 
     const Status accel_status = calibrate_accel_with_retries(imu);
     if (accel_status != Status::OK)
         example::halt("accel calibration failed", accel_status);
     const Vec3 accel_offset = imu.accel_offset();
-    std::printf("  accel offset %+.4f %+.4f %+.4f g\n", accel_offset.x, accel_offset.y,
-                accel_offset.z);
+    std::printf(
+        "  accel offset %+.4f %+.4f %+.4f g\n", accel_offset.x, accel_offset.y, accel_offset.z);
 
     Vec3 accel_after{};
     if (imu.read_accel(accel_after) == Status::OK) {
         const orientation::Angles after = orientation::tilt_from_accel(accel_after);
         std::printf("  after  accel calibration: roll %+.2f, pitch %+.2f deg, |a| %.3f g\n",
-                    after.roll_deg, after.pitch_deg, magnitude(accel_after));
+                    after.roll_deg,
+                    after.pitch_deg,
+                    magnitude(accel_after));
     }
 
     std::printf("\nThe FILTERED column is the tilt to use (smooth and drift-free).\n");
     std::printf("Now tilt the board slowly, then shake it.\n");
-    std::printf("Slow tilt: both columns agree. Shaking: accel-only jumps, filtered stays smooth.\n");
+    std::printf(
+        "Slow tilt: both columns agree. Shaking: accel-only jumps, filtered stays smooth.\n");
     std::printf("\nroll  = tilt left/right (around X)\n");
     std::printf("pitch = tilt forward/back (around Y)\n\n");
 
@@ -171,7 +174,9 @@ int main() {
 
         if (++loop_count % PRINT_EVERY == 0) {
             std::printf("\r  roll %+6.1f deg   pitch %+6.1f deg   tilt %5.1f deg   ",
-                        filtered.roll_deg, filtered.pitch_deg, total_tilt_deg(filtered));
+                        filtered.roll_deg,
+                        filtered.pitch_deg,
+                        total_tilt_deg(filtered));
             std::fflush(stdout);
         }
     }
