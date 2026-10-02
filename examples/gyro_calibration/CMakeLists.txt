@@ -9,6 +9,7 @@ target_link_libraries(gyro_calibration PRIVATE
     bus_pico
     pico_stdlib
     hardware_i2c
+    hardware_spi
 )
 
 target_compile_options(gyro_calibration PRIVATE -Wall -Wextra)

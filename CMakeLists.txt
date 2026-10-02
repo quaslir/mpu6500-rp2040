@@ -54,9 +54,10 @@ else()
     message(STATUS "clang-format not found: 'format' targets disabled")
 endif()
 
-
+add_subdirectory(lib/math)
 add_subdirectory(lib/bus)
 add_subdirectory(lib/bus_pico)
+add_subdirectory(lib/orientation)
 add_subdirectory(mpu6500)
 
 add_subdirectory(examples)

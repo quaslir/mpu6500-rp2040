@@ -9,6 +9,7 @@ target_link_libraries(accel_calibration PRIVATE
     bus_pico
     pico_stdlib
     hardware_i2c
+    hardware_spi
 )
 
 target_compile_options(accel_calibration PRIVATE -Wall -Wextra)

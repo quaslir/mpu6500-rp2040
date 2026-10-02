@@ -2,8 +2,8 @@
 
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
+#include "math/vec3.hpp"
 #include "mpu6500/config.hpp"
-#include "mpu6500/vec3.hpp"
 #include <cstdint>
 #include <span>
 namespace mpu6500::detail {

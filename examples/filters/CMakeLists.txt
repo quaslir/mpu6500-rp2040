@@ -7,6 +7,7 @@ target_link_libraries(filters PRIVATE
     bus_pico
     pico_stdlib
     hardware_spi
+    hardware_i2c
 )
 
 target_compile_definitions(filters PRIVATE IMU_BUS_${IMU_BUS})
