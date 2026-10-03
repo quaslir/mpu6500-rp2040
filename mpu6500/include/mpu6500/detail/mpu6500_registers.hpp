@@ -51,6 +51,9 @@ public:
     [[nodiscard]] Status read_fifo_count(uint16_t& count) const;
     [[nodiscard]] Status read_fifo_bytes(std::span<uint8_t> buffer) const;
     [[nodiscard]] Status read_int_status(uint8_t& status) const;
+    // INTERRUPTS
+    [[nodiscard]] Status write_int_pin_config(const config::Interrupts& interrupts);
+    [[nodiscard]] Status write_int_sources(const config::InterruptSources& sources);
 
 private:
     [[nodiscard]] Status update_bits(uint8_t reg, uint8_t mask, uint8_t data);

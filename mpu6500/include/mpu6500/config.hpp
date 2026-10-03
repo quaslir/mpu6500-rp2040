@@ -116,6 +116,32 @@ struct FifoReadResult {
     size_t frames{};
     bool overflowed{};
 };
+enum class IntLevel : uint8_t {
+    ActiveHigh = 0,
+    ActiveLow = 1
+};
+
+enum class IntDrive : uint8_t {
+    PushPull = 0,
+    OpenDrain = 1
+};
+
+enum class IntMode : uint8_t {
+    Pulse = 0,
+    Latched = 1
+};
+
+struct InterruptSources {
+    bool raw_data_ready{};
+    bool fifo_overflow{};
+};
+
+struct Interrupts {
+  InterruptSources sources{};
+IntLevel level{IntLevel::ActiveHigh};
+IntDrive drive{IntDrive::PushPull};
+IntMode mode{IntMode::Pulse};
+};
 
 struct Config {
     bool use_i2c{true};
@@ -123,6 +149,7 @@ struct Config {
     Power power{};
     Calibration calibration{};
     Fifo fifo{};
+    Interrupts interrupts{};
 };
 
 } // namespace mpu6500::config

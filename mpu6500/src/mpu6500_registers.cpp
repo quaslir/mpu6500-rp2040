@@ -185,4 +185,30 @@ Status Mpu6500Regs::read_fifo_bytes(std::span<uint8_t> buffer) const {
 Status Mpu6500Regs::read_int_status(uint8_t& status) const {
     return bus_.read_regs(reg::INT_STATUS, std::span<uint8_t>(&status, 1));
 }
+
+
+Status Mpu6500Regs::write_int_pin_config(const config::Interrupts& interrupts) {
+    uint8_t byte{};
+    if(interrupts.level == config::IntLevel::ActiveLow) {
+        byte |= bits::int_pin_cfg::ACTL;
+    }
+    if(interrupts.drive == config::IntDrive::OpenDrain) {
+        byte |= bits::int_pin_cfg::OPEN;
+    }
+    if(interrupts.mode == config::IntMode::Latched) {
+        byte |= bits::int_pin_cfg::LATCH_INT_EN;
+    }
+
+    return update_bits(reg::INT_PIN_CFG,bits::int_pin_cfg::MASK, byte);
+}
+Status Mpu6500Regs::write_int_sources(const config::InterruptSources& sources) {
+    uint8_t byte{};
+    if(sources.raw_data_ready) {
+        byte |= bits::int_enable::RAW_RDY;
+    }
+    if(sources.fifo_overflow) {
+        byte |= bits::int_enable::FIFO_OFLOW;
+    }
+return update_bits(reg::INT_ENABLE, bits::int_enable::MASK, byte);
+}
 } // namespace mpu6500::detail

@@ -113,6 +113,9 @@ Status Mpu6500::apply_config() {
     if (config_.fifo.enabled) {
         MPU_RETURN_IF_ERROR(regs_.write_fifo_enabled(true));
     }
+
+    MPU_RETURN_IF_ERROR(regs_.write_int_pin_config(config_.interrupts));
+    MPU_RETURN_IF_ERROR(regs_.write_int_sources(config_.interrupts.sources));
     return Status::OK;
 }
 
