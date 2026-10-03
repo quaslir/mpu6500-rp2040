@@ -22,10 +22,10 @@ constexpr uint32_t STARTUP_DELAY_MS = 3000; // time to open the serial terminal
 constexpr uint32_t I2C_TIMEOUT_US = 30000;
 constexpr uint8_t SAMPLE_DIVIDER = 9; // 1000 / (1 + 9) = 100 Hz
 
-constexpr uint32_t READ_PERIOD_MS = 100;       // ~10 frames per read at 100 Hz
-constexpr int READS_PER_REPORT = 10;           // print the measured rate once per second
-constexpr int READS_BETWEEN_OVERFLOWS = 50;    // force an overflow every 5 s
-constexpr uint32_t OVERFLOW_PAUSE_MS = 1000;   // buffer holds 512 / 12 = 42 frames = 420 ms
+constexpr uint32_t READ_PERIOD_MS = 100;        // ~10 frames per read at 100 Hz
+constexpr int READS_PER_REPORT = 10;            // print the measured rate once per second
+constexpr int READS_BETWEEN_OVERFLOWS = 50;     // force an overflow every 5 s
+constexpr uint32_t OVERFLOW_PAUSE_MS = 1000;    // buffer holds 512 / 12 = 42 frames = 420 ms
 constexpr std::size_t MAX_FRAMES_PER_READ = 64; // more than the FIFO can ever hold (42)
 
 void print_frames(int index, std::size_t frames, const Sample& last) {

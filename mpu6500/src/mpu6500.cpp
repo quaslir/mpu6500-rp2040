@@ -108,7 +108,8 @@ Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.write_fifo_mode(config_.fifo.mode));
 
     MPU_RETURN_IF_ERROR(regs_.fifo_reset());
-
+    uint8_t discarded{}; // UNUSED
+    MPU_RETURN_IF_ERROR(regs_.read_int_status(discarded));
     if (config_.fifo.enabled) {
         MPU_RETURN_IF_ERROR(regs_.write_fifo_enabled(true));
     }

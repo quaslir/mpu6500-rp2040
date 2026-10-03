@@ -12,7 +12,9 @@
 
 namespace mpu6500 {
 Status Mpu6500::fifo_reset() {
-    return regs_.fifo_reset();
+    MPU_RETURN_IF_ERROR(regs_.fifo_reset());
+    uint8_t discarded{}; // UNUSED
+    return regs_.read_int_status(discarded);
 }
 [[nodiscard]] Status Mpu6500::fifo_frame_count(uint16_t& count) const {
     if (!config_.fifo.enabled) {
