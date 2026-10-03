@@ -92,9 +92,9 @@ int main() {
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, I2C_TIMEOUT_US};
 
     cfg::Config config{};
-    config.starting_gyro_params.filter = cfg::GyroFilter::Hz41;
-    config.starting_accel_params.filter = cfg::AccelFilter::Hz41;
-    config.starting_sample_divider = SAMPLE_DIVIDER;
+    config.measurement.gyro.filter = cfg::GyroFilter::Hz41;
+    config.measurement.accel.filter = cfg::AccelFilter::Hz41;
+    config.measurement.sample_divider = SAMPLE_DIVIDER;
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
@@ -109,7 +109,7 @@ int main() {
     const Status calibration_status = calibrate_gyro_with_retries(imu);
     if (calibration_status != Status::OK)
         example::halt("gyro calibration failed", calibration_status);
-    const Vec3 gyro_offset = imu.gyro_offset();
+    const Vec3 gyro_offset = imu.config().calibration.gyro_offset_dps;
     std::printf(
         "  gyro offset %+.3f %+.3f %+.3f dps\n", gyro_offset.x, gyro_offset.y, gyro_offset.z);
 
@@ -126,7 +126,7 @@ int main() {
     const Status accel_status = calibrate_accel_with_retries(imu);
     if (accel_status != Status::OK)
         example::halt("accel calibration failed", accel_status);
-    const Vec3 accel_offset = imu.accel_offset();
+    const Vec3 accel_offset = imu.config().calibration.accel_offset_g;
     std::printf(
         "  accel offset %+.4f %+.4f %+.4f g\n", accel_offset.x, accel_offset.y, accel_offset.z);
 

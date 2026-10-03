@@ -74,6 +74,7 @@ Status run_calibration(mpu6500::Mpu6500& imu) {
 
 int main() {
     stdio_init_all();
+    sleep_ms(STARTUP_DELAY_MS);
 
     std::printf("\n=== MPU6500 gyro calibration ===\n\n");
 
@@ -82,9 +83,9 @@ int main() {
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, I2C_TIMEOUT_US};
 
     mpu6500::config::Config config{};
-    config.starting_gyro_params.filter = mpu6500::config::GyroFilter::Hz41;
-    config.starting_accel_params.filter = mpu6500::config::AccelFilter::Hz41;
-    config.starting_sample_divider = SAMPLE_DIVIDER;
+    config.measurement.gyro.filter = mpu6500::config::GyroFilter::Hz41;
+    config.measurement.accel.filter = mpu6500::config::AccelFilter::Hz41;
+    config.measurement.sample_divider = SAMPLE_DIVIDER;
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
@@ -115,7 +116,7 @@ int main() {
     const Status calibration_status = run_calibration(imu);
     if (calibration_status != Status::OK)
         example::halt("gyro calibration failed", calibration_status);
-    print_vec("measured offset", imu.gyro_offset());
+    print_vec("measured offset", imu.config().calibration.gyro_offset_dps);
 
     // --- 3. after ------------------------------------------------------------
     std::printf("\n[3] After calibration (average of %u samples):\n", CHECK_SAMPLES);

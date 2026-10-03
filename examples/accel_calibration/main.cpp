@@ -101,8 +101,8 @@ int main() {
 
     mpu6500::config::Config config{};
     config.measurement.gyro.filter = mpu6500::config::GyroFilter::Hz41;
-    config.starting_accel_params.filter = mpu6500::config::AccelFilter::Hz41;
-    config.starting_sample_divider = SAMPLE_DIVIDER;
+    config.measurement.accel.filter = mpu6500::config::AccelFilter::Hz41;
+    config.measurement.sample_divider = SAMPLE_DIVIDER;
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
@@ -135,7 +135,7 @@ int main() {
     if (calibration_status != Status::OK)
         example::halt("accel calibration failed", calibration_status);
 
-    const Vec3 offset = imu.accel_offset();
+    const Vec3 offset = imu.config().calibration.accel_offset_g;
     std::printf("  measured offset          x=%+7.3f  y=%+7.3f  z=%+7.3f g\n",
                 offset.x,
                 offset.y,
@@ -154,8 +154,10 @@ int main() {
     std::printf("  -> corrected should be about (0, 0, +1), raw unchanged\n");
 
     std::printf("\nTo reuse this calibration without measuring again, put this in your Config:\n");
-    std::printf(
-        "  config.starting_accel_offset = {%.4ff, %.4ff, %.4ff};\n", offset.x, offset.y, offset.z);
+    std::printf("  config.calibration.accel_offset_g = {%.4ff, %.4ff, %.4ff};\n",
+                offset.x,
+                offset.y,
+                offset.z);
     std::printf("Note: the tilt of the surface is included in this offset.\n");
 
     // --- 4. live -------------------------------------------------------------

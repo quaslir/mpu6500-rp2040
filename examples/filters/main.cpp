@@ -165,6 +165,7 @@ void print_table_header() {
 
 int main() {
     stdio_init_all();
+    sleep_ms(STARTUP_DELAY_MS);
 
     std::printf("\n=== MPU6500 filter comparison ===\n");
     std::printf("Bus: I2C, address 0x%02x\n\n", i2c_config::DEVICE_ADDR);
@@ -172,7 +173,7 @@ int main() {
     i2c_config::init_test_i2c();
 
     mpu6500::config::Config config{};
-    config.starting_sample_divider = 9; // 1000 / (1 + 9) = 100 Hz
+    config.measurement.sample_divider = 9; // 1000 / (1 + 9) = 100 Hz
 
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, 30000};
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
@@ -185,10 +186,12 @@ int main() {
     print_status("init", init_status);
     if (init_status != Status::OK)
         halt("init failed", init_status);
+
+    const auto& measurement = imu.config().measurement;
     std::printf("\nSettings: accel range code %u, gyro range code %u, sample divider %u\n",
-                static_cast<unsigned>(imu.accel_range()),
-                static_cast<unsigned>(imu.gyro_range()),
-                static_cast<unsigned>(imu.sample_divider()));
+                static_cast<unsigned>(measurement.accel.range),
+                static_cast<unsigned>(measurement.gyro.range),
+                static_cast<unsigned>(measurement.sample_divider));
     std::printf("Each filter is measured over %d samples (%d ms).\n",
                 SAMPLES_PER_STEP,
                 SAMPLES_PER_STEP * static_cast<int>(SAMPLE_PERIOD_MS));

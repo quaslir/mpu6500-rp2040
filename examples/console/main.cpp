@@ -182,33 +182,34 @@ void print_axes(const cfg::EnabledAxes& a) {
 }
 
 void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
-    const Vec3 ao = imu.accel_offset();
-    const Vec3 go = imu.gyro_offset();
-    const RawVec3 hw = imu.gyro_hw_offset();
+    const cfg::Config& c = imu.config();
+    const Vec3& ao = c.calibration.accel_offset_g;
+    const Vec3& go = c.calibration.gyro_offset_dps;
+    const RawVec3& hw = c.calibration.gyro_hw_offset;
 
     std::printf("--- status ---\n");
     std::printf("  accel     range +-%s g, filter %s\n",
-                name_of(ACCEL_RANGES, imu.accel_range()),
-                name_of(ACCEL_FILTERS, imu.accel_filter()));
+                name_of(ACCEL_RANGES, c.measurement.accel.range),
+                name_of(ACCEL_FILTERS, c.measurement.accel.filter));
     std::printf("  gyro      range +-%s dps, filter %s\n",
-                name_of(GYRO_RANGES, imu.gyro_range()),
-                name_of(GYRO_FILTERS, imu.gyro_filter()));
+                name_of(GYRO_RANGES, c.measurement.gyro.range),
+                name_of(GYRO_FILTERS, c.measurement.gyro.filter));
     std::printf("  rate      divider %u (%s), gyro %.2f Hz, accel %.2f Hz\n",
-                imu.sample_divider(),
+                c.measurement.sample_divider,
                 imu.divider_effective() ? "effective" : "ignored by current gyro filter",
                 imu.gyro_sample_rate_hz(),
                 imu.accel_sample_rate_hz());
     std::printf("  power     sleep=%s standby=%s temp=%s clock=%s\n",
-                on_off(imu.is_sleeping()),
-                on_off(imu.gyro_standby()),
-                on_off(imu.temperature_enabled()),
-                name_of(CLOCK_SOURCES, imu.clock_source()));
+                on_off(c.power.sleeping),
+                on_off(c.power.gyro_standby),
+                on_off(c.power.temperature_enabled),
+                name_of(CLOCK_SOURCES, c.power.clock_source));
     if (imu.is_low_power())
         std::printf("  low power on, wake-up rate %s Hz (gyro off)\n",
                     name_of(LOW_POWER_RATES, imu.low_power_rate()));
     else
         std::printf("  low power off\n");
-    print_axes(imu.enabled_axes());
+    print_axes(c.power.enabled_axes);
     std::printf("  offsets   accel %+.4f %+.4f %+.4f g | gyro %+.3f %+.3f %+.3f dps\n",
                 ao.x,
                 ao.y,
@@ -424,7 +425,7 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
             std::printf("divider is ignored by the current gyro filter, use gfilter 184..5\n");
         print_result("set_sample_rate_hz", imu.set_sample_rate_hz(static_cast<uint16_t>(hz)));
         std::printf("divider %u, real rate gyro %.2f Hz, accel %.2f Hz\n",
-                    imu.sample_divider(),
+                    imu.config().measurement.sample_divider,
                     imu.gyro_sample_rate_hz(),
                     imu.accel_sample_rate_hz());
 
@@ -464,13 +465,13 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         print_result("set_clock_source", imu.set_clock_source(entry->value));
     } else if (std::strcmp(cmd, "axis") == 0) {
         bool on = false;
-        cfg::EnabledAxes axes = imu.enabled_axes();
+        cfg::EnabledAxes axes = imu.config().power.enabled_axes;
         if (arg1 == nullptr || !parse_on_off(arg2, on) || !set_axis(axes, arg1, on)) {
             std::printf("usage: axis ax|ay|az|gx|gy|gz on|off\n");
             return;
         }
         print_result("set_enabled_axes", imu.set_enabled_axes(axes));
-        print_axes(imu.enabled_axes());
+        print_axes(imu.config().power.enabled_axes);
     } else if (std::strcmp(cmd, "lp") == 0) {
         if (arg1 != nullptr && std::strcmp(arg1, "off") == 0) {
             print_result("exit_low_power_accel", imu.exit_low_power_accel());
@@ -517,12 +518,12 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
     } else if (std::strcmp(cmd, "calgyro") == 0) {
         std::printf("keep the board still...\n");
         print_result("calibrate_gyro", imu.calibrate_gyro());
-        const Vec3 o = imu.gyro_offset();
+        const Vec3& o = imu.config().calibration.gyro_offset_dps;
         std::printf("gyro offset %+.3f %+.3f %+.3f dps\n", o.x, o.y, o.z);
     } else if (std::strcmp(cmd, "calaccel") == 0) {
         std::printf("board flat, chip up, keep still...\n");
         print_result("calibrate_accel", imu.calibrate_accel());
-        const Vec3 o = imu.accel_offset();
+        const Vec3& o = imu.config().calibration.accel_offset_g;
         std::printf("accel offset %+.4f %+.4f %+.4f g\n", o.x, o.y, o.z);
     } else if (std::strcmp(cmd, "clear") == 0) {
         imu.clear_offsets();
@@ -533,7 +534,7 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         long z = 0;
         if (!parse_long(arg1, -32768, 32767, x) || !parse_long(arg2, -32768, 32767, y) ||
             !parse_long(arg3, -32768, 32767, z)) {
-            const RawVec3 hw = imu.gyro_hw_offset();
+            const RawVec3& hw = imu.config().calibration.gyro_hw_offset;
             std::printf("gyro hw offset %d %d %d (raw)\n", hw.x, hw.y, hw.z);
             std::printf("usage: ghwoff <x> <y> <z>   (-32768..32767)\n");
             return;
@@ -558,9 +559,9 @@ int main() {
     bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, I2C_TIMEOUT_US};
 
     cfg::Config config{};
-    config.starting_gyro_params.filter = cfg::GyroFilter::Hz41;
-    config.starting_accel_params.filter = cfg::AccelFilter::Hz41;
-    config.starting_sample_divider = 9;
+    config.measurement.gyro.filter = cfg::GyroFilter::Hz41;
+    config.measurement.accel.filter = cfg::AccelFilter::Hz41;
+    config.measurement.sample_divider = 9;
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
