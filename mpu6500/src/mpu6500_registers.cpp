@@ -3,7 +3,6 @@
 #include "bits.hpp"
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
-#include "device.hpp"
 #include "mpu6500/config.hpp"
 #include "registers.hpp"
 #include <array>
