@@ -7,7 +7,7 @@ Status Mpu6500::read_all_raw(Sample& sample) const {
     std::array<uint8_t, layout::BURST_SIZE> sample_buffer{};
     MPU_RETURN_IF_ERROR(regs_.read_burst(sample_buffer));
     // fill acceleration
-    const float acc_scale = ::detail::accel_range_to_scale(accel_.range);
+    const float acc_scale = ::detail::accel_range_to_scale(config_.measurement.accel.range);
 
     sample.accel_g = ::detail::decode_vec3(
         std::span{sample_buffer}.subspan<layout::ACCEL_OFFSET, layout::VEC3_SIZE>(), acc_scale);
@@ -17,7 +17,7 @@ Status Mpu6500::read_all_raw(Sample& sample) const {
         std::span{sample_buffer}.subspan<layout::TEMP_OFFSET, layout::TEMP_SIZE>());
     // fill gyro
 
-    const float gyro_scale = ::detail::gyro_range_to_scale(gyro_.range);
+    const float gyro_scale = ::detail::gyro_range_to_scale(config_.measurement.gyro.range);
 
     sample.gyro_dps = ::detail::decode_vec3(
         std::span{sample_buffer}.subspan<layout::GYRO_OFFSET, layout::VEC3_SIZE>(), gyro_scale);
@@ -29,7 +29,7 @@ Status Mpu6500::read_accel_raw(Vec3& sample) const {
     std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
     MPU_RETURN_IF_ERROR(regs_.read_accel_bytes(sample_buffer));
 
-    const float acc_scale = ::detail::accel_range_to_scale(accel_.range);
+    const float acc_scale = ::detail::accel_range_to_scale(config_.measurement.accel.range);
 
     sample = ::detail::decode_vec3(sample_buffer, acc_scale);
 
@@ -39,7 +39,7 @@ Status Mpu6500::read_gyro_raw(Vec3& sample) const {
     std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
     MPU_RETURN_IF_ERROR(regs_.read_gyro_bytes(sample_buffer));
 
-    const float gyro_scale = ::detail::gyro_range_to_scale(gyro_.range);
+    const float gyro_scale = ::detail::gyro_range_to_scale(config_.measurement.gyro.range);
 
     sample = ::detail::decode_vec3(sample_buffer, gyro_scale);
 
@@ -48,20 +48,20 @@ Status Mpu6500::read_gyro_raw(Vec3& sample) const {
 
 Status Mpu6500::read_all(Sample& sample) const {
     MPU_RETURN_IF_ERROR(read_all_raw(sample));
-    sample.accel_g -= accel_.offset;
-    sample.gyro_dps -= gyro_.offset;
+    sample.accel_g -= config_.calibration.accel_offset_g;
+    sample.gyro_dps -= config_.calibration.gyro_offset_dps;
 
     return Status::OK;
 }
 Status Mpu6500::read_accel(Vec3& sample) const {
     MPU_RETURN_IF_ERROR(read_accel_raw(sample));
-    sample -= accel_.offset;
+    sample -= config_.calibration.accel_offset_g;
 
     return Status::OK;
 }
 Status Mpu6500::read_gyro(Vec3& sample) const {
     MPU_RETURN_IF_ERROR(read_gyro_raw(sample));
-    sample -= gyro_.offset;
+    sample -= config_.calibration.gyro_offset_dps;
     return Status::OK;
 }
 

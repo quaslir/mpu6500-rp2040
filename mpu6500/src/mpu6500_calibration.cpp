@@ -5,22 +5,15 @@
 #include <cstdint>
 namespace mpu6500 {
 void Mpu6500::set_accel_offset(const Vec3& offset) {
-    accel_.offset = offset;
+    config_.calibration.accel_offset_g = offset;
 }
 void Mpu6500::set_gyro_offset(const Vec3& offset) {
-    gyro_.offset = offset;
-}
-
-const Vec3& Mpu6500::accel_offset() const {
-    return accel_.offset;
-}
-const Vec3& Mpu6500::gyro_offset() const {
-    return gyro_.offset;
+    config_.calibration.gyro_offset_dps = offset;
 }
 
 void Mpu6500::clear_offsets() {
-    accel_.offset = Vec3{};
-    gyro_.offset = Vec3{};
+    config_.calibration.accel_offset_g = Vec3{};
+    config_.calibration.gyro_offset_dps = Vec3{};
 }
 
 Status Mpu6500::measure_mean(calibration::Sensor sensor,
@@ -126,12 +119,9 @@ Status Mpu6500::calibrate_accel(const Vec3& expected_gravity_g,
 Status Mpu6500::set_gyro_hw_offset(const RawVec3& offset) {
     MPU_RETURN_IF_ERROR(regs_.write_gyro_hw_offset(offset));
 
-    gyro_.hw_offset = offset;
+    config_.calibration.gyro_hw_offset = offset;
 
     return Status::OK;
-}
-RawVec3 Mpu6500::gyro_hw_offset() const {
-    return gyro_.hw_offset;
 }
 
 } // namespace mpu6500

@@ -70,27 +70,39 @@ struct LowPowerMode {
 };
 
 struct Accel {
-    AccelRange range = AccelRange::G2;
-    AccelFilter filter = AccelFilter::Hz460;
-    Vec3 offset{};
+    AccelRange range{AccelRange::G2};
+    AccelFilter filter{AccelFilter::Hz460};
 };
 
 struct Gyro {
-    bool standby{};
-    RawVec3 hw_offset{};
-    Vec3 offset{};
     GyroRange range{GyroRange::Dps250};
     GyroFilter filter{GyroFilter::Hz250};
 };
 
+struct Measurement {
+    Accel accel{};
+    Gyro gyro{};
+    uint8_t sample_divider{};
+};
+
+struct Power {
+    bool sleeping{};
+    bool gyro_standby{};
+    bool temperature_enabled{};
+    ClockSource clock_source{ClockSource::Auto};
+    EnabledAxes enabled_axes{};
+};
+
+struct Calibration {
+    Vec3 accel_offset_g{};
+    Vec3 gyro_offset_dps{};
+    RawVec3 gyro_hw_offset{};
+};
 struct Config {
-    bool use_i2c = true;
-    Accel starting_accel_params{};
-    Gyro starting_gyro_params{};
-    uint8_t starting_sample_divider = 0;
-    ClockSource starting_clock_source = ClockSource::Auto;
-    EnabledAxes starting_enabled_axes{};
-    bool starting_temperature_enabled{};
+    bool use_i2c{true};
+    Measurement measurement{};
+    Power power{};
+    Calibration calibration{};
 };
 
 } // namespace mpu6500::config

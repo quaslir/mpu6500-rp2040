@@ -42,12 +42,7 @@ float low_power_rate_to_hz(mpu6500::config::LowPowerAccelRate rate) {
 } // namespace
 namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
-    : regs_(bus), wait_(wait), use_i2c_(config.use_i2c), accel_(config.starting_accel_params),
-      gyro_(config.starting_gyro_params), sample_divider_(config.starting_sample_divider),
-      sleeping_(false), clock_source_(config.starting_clock_source),
-      enabled_axes_(config.starting_enabled_axes),
-      temperature_enabled_(config.starting_temperature_enabled), low_mode_(config::LowPowerMode{}) {
-}
+    : regs_(bus), wait_(wait), config_(config), low_mode_(config::LowPowerMode{}) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return regs_.read_who_am_i(id);
@@ -63,44 +58,53 @@ Status Mpu6500::init() {
     wait_(device::RESET_WAIT_MS);
 
     if (low_mode_.active) {
-        accel_.filter = low_mode_.backup.accel_filter;
-        temperature_enabled_ = low_mode_.backup.temperature_enabled;
-        enabled_axes_ = low_mode_.backup.enabled_axes;
+        config_.measurement.accel.filter = low_mode_.backup.accel_filter;
+        config_.power.temperature_enabled = low_mode_.backup.temperature_enabled;
+        config_.power.enabled_axes = low_mode_.backup.enabled_axes;
 
         low_mode_.active = false;
     }
     MPU_RETURN_IF_ERROR(regs_.signal_path_reset());
     wait_(device::RESET_WAIT_MS);
 
-    if (!use_i2c_) { // disable I2C if config was stated that SPI is used. If user uses I2C, NACK
-                     // will be a result of following writing.
+    if (!config_.use_i2c) { // disable I2C if config was stated that SPI is used. If user uses I2C,
+                            // NACK
+                            // will be a result of following writing.
 
         MPU_RETURN_IF_ERROR(regs_.disable_i2c_interface());
     }
+    return apply_config();
+}
+
+Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.write_power_normal());
 
-    MPU_RETURN_IF_ERROR(set_sleep(sleeping_));
+    MPU_RETURN_IF_ERROR(regs_.write_sleep(config_.power.sleeping));
 
-    MPU_RETURN_IF_ERROR(set_clock_source(clock_source_));
+    MPU_RETURN_IF_ERROR(regs_.write_clock_source(config_.power.clock_source));
 
-    MPU_RETURN_IF_ERROR(set_temperature_enabled(temperature_enabled_));
+    MPU_RETURN_IF_ERROR(regs_.write_temperature_enabled(config_.power.temperature_enabled));
 
-    MPU_RETURN_IF_ERROR(set_gyro_standby(gyro_.standby));
+    MPU_RETURN_IF_ERROR(regs_.write_gyro_standby(config_.power.gyro_standby));
 
-    MPU_RETURN_IF_ERROR(set_enabled_axes(enabled_axes_));
+    MPU_RETURN_IF_ERROR(regs_.write_enabled_axes(config_.power.enabled_axes));
 
-    MPU_RETURN_IF_ERROR(set_accel_range(accel_.range));
+    MPU_RETURN_IF_ERROR(regs_.write_accel_range(config_.measurement.accel.range));
 
-    MPU_RETURN_IF_ERROR(set_gyro_range(gyro_.range));
+    MPU_RETURN_IF_ERROR(regs_.write_gyro_range(config_.measurement.gyro.range));
 
-    MPU_RETURN_IF_ERROR(set_accel_filter(accel_.filter));
+    MPU_RETURN_IF_ERROR(regs_.write_accel_filter(config_.measurement.accel.filter));
 
-    MPU_RETURN_IF_ERROR(set_gyro_filter(gyro_.filter));
+    MPU_RETURN_IF_ERROR(regs_.write_gyro_filter(config_.measurement.gyro.filter));
 
-    MPU_RETURN_IF_ERROR(set_sample_rate_divider(sample_divider_));
+    MPU_RETURN_IF_ERROR(regs_.write_sample_rate_divider(config_.measurement.sample_divider));
 
-    MPU_RETURN_IF_ERROR(set_gyro_hw_offset(gyro_.hw_offset));
+    MPU_RETURN_IF_ERROR(regs_.write_gyro_hw_offset(config_.calibration.gyro_hw_offset));
     return Status::OK;
+}
+
+const config::Config& Mpu6500::config() const {
+    return config_;
 }
 
 Status Mpu6500::reset_signal_paths(bool gyro, bool accel, bool temp) {
@@ -113,7 +117,7 @@ Status Mpu6500::reset_sensor_registers() {
 float Mpu6500::gyro_sample_rate_hz() const {
     if (low_mode_.active)
         return 0.0f;
-    switch (gyro_.filter) {
+    switch (config_.measurement.gyro.filter) {
         case config::GyroFilter::Bypass3600Hz:
         case config::GyroFilter::Bypass8800Hz:
             return device::GYRO_RATE_BYPASS_HZ;
@@ -122,24 +126,24 @@ float Mpu6500::gyro_sample_rate_hz() const {
             return device::GYRO_RATE_NO_DLPF_HZ;
         default:
             return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
-                   static_cast<float>((1 + sample_divider_));
+                   static_cast<float>((1 + config_.measurement.sample_divider));
     }
 }
 float Mpu6500::accel_sample_rate_hz() const {
     if (low_mode_.active) {
         return low_power_rate_to_hz(low_mode_.rate);
     } else {
-        switch (accel_.filter) {
+        switch (config_.measurement.accel.filter) {
             case config::AccelFilter::Bypass1130Hz:
                 return device::ACCEL_RATE_BYPASS_HZ;
             default:
                 return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
-                       static_cast<float>((1 + sample_divider_));
+                       static_cast<float>((1 + config_.measurement.sample_divider));
         }
     }
 }
 bool Mpu6500::divider_effective() const {
-    switch (gyro_.filter) {
+    switch (config_.measurement.gyro.filter) {
         case config::GyroFilter::Hz250:
         case config::GyroFilter::Hz3600:
         case config::GyroFilter::Bypass3600Hz:

@@ -5,54 +5,38 @@
 namespace mpu6500 {
 Status Mpu6500::set_sleep(bool enabled) {
     MPU_RETURN_IF_ERROR(regs_.write_sleep(enabled));
-    sleeping_ = enabled;
+    config_.power.sleeping = enabled;
     return Status::OK;
 }
 Status Mpu6500::set_gyro_standby(bool enabled) {
     MPU_RETURN_IF_ERROR(regs_.write_gyro_standby(enabled));
-    gyro_.standby = enabled;
+    config_.power.gyro_standby = enabled;
     return Status::OK;
 }
 Status Mpu6500::set_temperature_enabled(bool enabled) {
     MPU_RETURN_IF_ERROR(regs_.write_temperature_enabled(enabled));
 
-    temperature_enabled_ = enabled;
+    config_.power.temperature_enabled = enabled;
     return Status::OK;
 }
 Status Mpu6500::set_clock_source(config::ClockSource source) {
     MPU_RETURN_IF_ERROR(regs_.write_clock_source(source));
-    clock_source_ = source;
+    config_.power.clock_source = source;
     return Status::OK;
 }
 Status Mpu6500::set_enabled_axes(const config::EnabledAxes& enabled) {
     MPU_RETURN_IF_ERROR(regs_.write_enabled_axes(enabled));
-    enabled_axes_ = enabled;
+    config_.power.enabled_axes = enabled;
     return Status::OK;
-}
-
-bool Mpu6500::is_sleeping() const {
-    return sleeping_;
-}
-bool Mpu6500::gyro_standby() const {
-    return gyro_.standby;
-}
-bool Mpu6500::temperature_enabled() const {
-    return temperature_enabled_;
-}
-config::ClockSource Mpu6500::clock_source() const {
-    return clock_source_;
-}
-config::EnabledAxes Mpu6500::enabled_axes() const {
-    return enabled_axes_;
 }
 
 Status Mpu6500::enter_low_power_accel(config::LowPowerAccelRate rate) {
     if (low_mode_.active)
         return Status::ERROR;
-    low_mode_.backup.enabled_axes = enabled_axes_;
-    low_mode_.backup.temperature_enabled = temperature_enabled_;
-    low_mode_.backup.accel_filter = accel_.filter;
-    config::EnabledAxes gyro_disabled_axes = enabled_axes_;
+    low_mode_.backup.enabled_axes = config_.power.enabled_axes;
+    low_mode_.backup.temperature_enabled = config_.power.temperature_enabled;
+    low_mode_.backup.accel_filter = config_.measurement.accel.filter;
+    config::EnabledAxes gyro_disabled_axes = config_.power.enabled_axes;
     gyro_disabled_axes.gyro_x = false;
     gyro_disabled_axes.gyro_y = false;
     gyro_disabled_axes.gyro_z = false;

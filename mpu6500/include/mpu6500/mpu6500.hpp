@@ -19,10 +19,11 @@ public:
 
     [[nodiscard]] Status init();
     [[nodiscard]] Status who_am_i(uint8_t& id);
+
+    [[nodiscard]] const config::Config& config() const;
+
     [[nodiscard]] Status set_accel_range(config::AccelRange range);
     [[nodiscard]] Status set_gyro_range(config::GyroRange range);
-    [[nodiscard]] config::AccelRange accel_range() const;
-    [[nodiscard]] config::GyroRange gyro_range() const;
     // Measurement
     [[nodiscard]] Status read_all(Sample& sample) const;
 
@@ -39,16 +40,10 @@ public:
     [[nodiscard]] Status set_accel_filter(config::AccelFilter filter);
     [[nodiscard]] Status set_sample_rate_divider(uint8_t divider);
 
-    [[nodiscard]] config::GyroFilter gyro_filter() const;
-    [[nodiscard]] config::AccelFilter accel_filter() const;
-    [[nodiscard]] uint8_t sample_divider() const;
-
     // Offset
     void set_accel_offset(const Vec3& offset);
     void set_gyro_offset(const Vec3& offset);
 
-    [[nodiscard]] const Vec3& accel_offset() const;
-    [[nodiscard]] const Vec3& gyro_offset() const;
     void clear_offsets();
 
     // Calibration
@@ -74,12 +69,6 @@ public:
     [[nodiscard]] Status set_clock_source(config::ClockSource source);
     [[nodiscard]] Status set_enabled_axes(const config::EnabledAxes& enabled);
 
-    [[nodiscard]] bool is_sleeping() const;
-    [[nodiscard]] bool gyro_standby() const;
-    [[nodiscard]] bool temperature_enabled() const;
-    [[nodiscard]] config::ClockSource clock_source() const;
-    [[nodiscard]] config::EnabledAxes enabled_axes() const;
-
     [[nodiscard]] Status reset_signal_paths(bool gyro = true, bool accel = true, bool temp = true);
     [[nodiscard]] Status reset_sensor_registers();
 
@@ -89,7 +78,6 @@ public:
     [[nodiscard]] Status set_sample_rate_hz(uint16_t sample_rate);
 
     [[nodiscard]] Status set_gyro_hw_offset(const RawVec3& offset);
-    [[nodiscard]] RawVec3 gyro_hw_offset() const;
     [[nodiscard]] Status enter_low_power_accel(config::LowPowerAccelRate rate);
     [[nodiscard]] Status exit_low_power_accel();
     [[nodiscard]] bool is_low_power() const;
@@ -101,19 +89,10 @@ private:
                                            Vec3& mean,
                                            const calibration::MeasureOptions& options,
                                            uint32_t period_ms) const;
-
+    [[nodiscard]] Status apply_config();
     detail::Mpu6500Regs regs_;
     WaitFunction wait_;
-    bool use_i2c_;
-    config::Accel accel_;
-    config::Gyro gyro_;
-    uint8_t sample_divider_;
-
-    bool sleeping_;
-    config::ClockSource clock_source_;
-    config::EnabledAxes enabled_axes_;
-    bool temperature_enabled_;
-
+    config::Config config_;
     config::LowPowerMode low_mode_;
 };
 } // namespace mpu6500
