@@ -137,8 +137,11 @@ float Mpu6500::accel_sample_rate_hz() const {
             case config::AccelFilter::Bypass1130Hz:
                 return device::ACCEL_RATE_BYPASS_HZ;
             default:
-                return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
-                       static_cast<float>((1 + config_.measurement.sample_divider));
+                if (divider_effective()) {
+                    return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
+                           static_cast<float>((1 + config_.measurement.sample_divider));
+                }
+                return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ);
         }
     }
 }
@@ -163,5 +166,9 @@ Status Mpu6500::set_sample_rate_hz(uint16_t hz) {
         std::lround(static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) / static_cast<float>(hz)) -
         1);
     return set_sample_rate_divider(divider);
+}
+
+WaitFunction Mpu6500::wait() const {
+    return wait_;
 }
 } // namespace mpu6500

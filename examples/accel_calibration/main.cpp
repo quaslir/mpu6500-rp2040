@@ -1,6 +1,7 @@
 #include "bus_pico/i2c_bus.hpp"
 #include "example_utils.hpp"
 #include "i2c_config.hpp"
+#include "mpu6500/calibration.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include <cmath>
 #include <cstdint>
@@ -76,7 +77,8 @@ Status run_calibration(mpu6500::Mpu6500& imu) {
                     CALIBRATION_ATTEMPTS,
                     static_cast<unsigned long>(duration_ms));
 
-        status = imu.calibrate_accel(mpu6500::calibration::GRAVITY_Z_UP, options);
+        status = mpu6500::calibration::calibrate_accel(
+            imu, mpu6500::calibration::GRAVITY_Z_UP, options);
         if (status == Status::OK)
             return status;
 

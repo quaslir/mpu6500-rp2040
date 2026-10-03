@@ -1,7 +1,13 @@
 #pragma once
 
+#include "bus/status.hpp"
 #include "math/vec3.hpp"
 #include <cstdint>
+
+namespace mpu6500 {
+    class Mpu6500;
+}
+
 namespace mpu6500::calibration {
 
 enum class Sensor { Accel, Gyro };
@@ -20,4 +26,19 @@ inline constexpr Vec3 GRAVITY_Z_UP{0.0f, 0.0f, 1.0f};
 inline constexpr float MIN_GRAVITY_G{0.8f};
 inline constexpr float MAX_GRAVITY_G{1.2f};
 
+[[nodiscard]] Status
+measure_mean(const Mpu6500& imu, Sensor sensor, Vec3& mean, const MeasureOptions& options);
+[[nodiscard]] Status measure_gyro_offset(const Mpu6500& imu,
+                                         Vec3& offset,
+                                         const MeasureOptions& options = DEFAULT_GYRO_OPTIONS);
+[[nodiscard]] Status calibrate_gyro(Mpu6500& imu,
+                                    const MeasureOptions& options = DEFAULT_GYRO_OPTIONS);
+
+[[nodiscard]] Status measure_accel_offset(const Mpu6500& imu,
+                                          Vec3& offset,
+                                          const Vec3& expected_gravity_g = GRAVITY_Z_UP,
+                                          const MeasureOptions& options = DEFAULT_ACCEL_OPTIONS);
+[[nodiscard]] Status calibrate_accel(Mpu6500& imu,
+                                     const Vec3& expected_gravity_g = GRAVITY_Z_UP,
+                                     const MeasureOptions& options = DEFAULT_ACCEL_OPTIONS);
 } // namespace mpu6500::calibration

@@ -4,6 +4,7 @@
 #include "bus_pico/i2c_bus.hpp"
 #include "example_utils.hpp"
 #include "i2c_config.hpp"
+#include "mpu6500/calibration.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include <cctype>
 #include <cstddef>
@@ -16,6 +17,7 @@
 namespace {
 
 namespace cfg = mpu6500::config;
+namespace cal = mpu6500::calibration;
 
 constexpr uint32_t STARTUP_DELAY_MS = 3000;
 constexpr uint32_t I2C_TIMEOUT_US = 30000;
@@ -517,12 +519,12 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         // --- calibration -----------------------------------------------------
     } else if (std::strcmp(cmd, "calgyro") == 0) {
         std::printf("keep the board still...\n");
-        print_result("calibrate_gyro", imu.calibrate_gyro());
+        print_result("calibrate_gyro", cal::calibrate_gyro(imu));
         const Vec3& o = imu.config().calibration.gyro_offset_dps;
         std::printf("gyro offset %+.3f %+.3f %+.3f dps\n", o.x, o.y, o.z);
     } else if (std::strcmp(cmd, "calaccel") == 0) {
         std::printf("board flat, chip up, keep still...\n");
-        print_result("calibrate_accel", imu.calibrate_accel());
+        print_result("calibrate_accel", cal::calibrate_accel(imu));
         const Vec3& o = imu.config().calibration.accel_offset_g;
         std::printf("accel offset %+.4f %+.4f %+.4f g\n", o.x, o.y, o.z);
     } else if (std::strcmp(cmd, "clear") == 0) {

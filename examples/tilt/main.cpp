@@ -4,6 +4,7 @@
 #include "bus_pico/i2c_bus.hpp"
 #include "example_utils.hpp"
 #include "i2c_config.hpp"
+#include "mpu6500/calibration.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include "orientation.hpp"
 #include <cmath>
@@ -14,6 +15,7 @@
 namespace {
 
 namespace cfg = mpu6500::config;
+namespace cal = mpu6500::calibration;
 
 constexpr uint32_t STARTUP_DELAY_MS = 3000;
 constexpr uint32_t I2C_TIMEOUT_US = 30000;
@@ -54,7 +56,7 @@ Status calibrate_gyro_with_retries(mpu6500::Mpu6500& imu) {
     Status status = Status::ERROR;
     for (int attempt = 1; attempt <= CALIBRATION_ATTEMPTS; ++attempt) {
         std::printf("  gyro calibration, attempt %d/%d...\n", attempt, CALIBRATION_ATTEMPTS);
-        status = imu.calibrate_gyro();
+        status = cal::calibrate_gyro(imu);
         if (status == Status::OK)
             return status;
         std::printf("  failed: %s (board moved?), retrying in 1 s\n", example::status_text(status));
@@ -69,7 +71,7 @@ Status calibrate_accel_with_retries(mpu6500::Mpu6500& imu) {
     Status status = Status::ERROR;
     for (int attempt = 1; attempt <= CALIBRATION_ATTEMPTS; ++attempt) {
         std::printf("  accel calibration, attempt %d/%d...\n", attempt, CALIBRATION_ATTEMPTS);
-        status = imu.calibrate_accel();
+        status = cal::calibrate_accel(imu);
         if (status == Status::OK)
             return status;
         std::printf("  failed: %s (board moved or not lying Z-up?), retrying in 1 s\n",

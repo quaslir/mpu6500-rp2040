@@ -47,22 +47,7 @@ public:
     void clear_offsets();
 
     // Calibration
-    [[nodiscard]] Status measure_mean(calibration::Sensor sensor,
-                                      Vec3& mean,
-                                      const calibration::MeasureOptions& options) const;
-    [[nodiscard]] Status measure_gyro_offset(
-        Vec3& offset,
-        const calibration::MeasureOptions& options = calibration::DEFAULT_GYRO_OPTIONS) const;
-    [[nodiscard]] Status
-    calibrate_gyro(const calibration::MeasureOptions& options = calibration::DEFAULT_GYRO_OPTIONS);
 
-    [[nodiscard]] Status measure_accel_offset(
-        Vec3& offset,
-        const Vec3& expected_gravity_g = calibration::GRAVITY_Z_UP,
-        const calibration::MeasureOptions& options = calibration::DEFAULT_ACCEL_OPTIONS) const;
-    [[nodiscard]] Status calibrate_accel(
-        const Vec3& expected_gravity_g = calibration::GRAVITY_Z_UP,
-        const calibration::MeasureOptions& options = calibration::DEFAULT_ACCEL_OPTIONS);
     [[nodiscard]] Status set_sleep(bool enabled);
     [[nodiscard]] Status set_gyro_standby(bool enabled);
     [[nodiscard]] Status set_temperature_enabled(bool enabled);
@@ -82,13 +67,9 @@ public:
     [[nodiscard]] Status exit_low_power_accel();
     [[nodiscard]] bool is_low_power() const;
     [[nodiscard]] config::LowPowerAccelRate low_power_rate() const;
+    [[nodiscard]] WaitFunction wait() const;
 
 private:
-    using ReadVec3Fn = Status (Mpu6500::*)(Vec3&) const;
-    [[nodiscard]] Status measure_mean_impl(ReadVec3Fn func,
-                                           Vec3& mean,
-                                           const calibration::MeasureOptions& options,
-                                           uint32_t period_ms) const;
     [[nodiscard]] Status apply_config();
     detail::Mpu6500Regs regs_;
     WaitFunction wait_;

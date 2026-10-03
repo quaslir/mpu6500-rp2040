@@ -59,7 +59,8 @@ Status run_calibration(mpu6500::Mpu6500& imu) {
                     CALIBRATION_ATTEMPTS,
                     static_cast<unsigned long>(duration_ms));
 
-        status = imu.calibrate_gyro(mpu6500::calibration::DEFAULT_GYRO_OPTIONS);
+        status = mpu6500::calibration::calibrate_gyro(imu,
+                                                      mpu6500::calibration::DEFAULT_GYRO_OPTIONS);
         if (status == Status::OK)
             return status;
 
