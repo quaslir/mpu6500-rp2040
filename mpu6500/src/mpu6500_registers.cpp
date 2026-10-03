@@ -3,7 +3,10 @@
 #include "bits.hpp"
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
+#include "device.hpp"
+#include "mpu6500/config.hpp"
 #include "registers.hpp"
+#include <array>
 #include <cstdint>
 #include <span>
 namespace mpu6500::detail {
@@ -152,5 +155,35 @@ Status Mpu6500Regs::write_cycle(bool enabled) {
     return update_bits(
         reg::PWR_MGMT_1, bits::pwr_mgmt_1::CYCLE, enabled ? bits::pwr_mgmt_1::CYCLE : 0);
 }
-
+Status Mpu6500Regs::write_fifo_sources(const config::FifoSources& sources) {
+    uint8_t byte = (sources.accel ? bits::fifo_en::ACCEL : 0) |
+                   (sources.temperature ? bits::fifo_en::TEMP : 0) |
+                   (sources.gyro ? bits::fifo_en::GYRO_ALL : 0);
+    return update_bits(reg::FIFO_EN, bits::fifo_en::MASK, byte);
+}
+Status Mpu6500Regs::write_fifo_mode(const config::FifoMode& mode) {
+    return update_bits(reg::CONFIG,
+                       bits::config::FIFO_MODE,
+                       mode == config::FifoMode::StopWhenFull ? bits::config::FIFO_MODE : 0);
+}
+Status Mpu6500Regs::write_fifo_enabled(bool enabled) {
+    return update_bits(
+        reg::USER_CTRL, bits::user_ctrl::FIFO_EN, enabled ? bits::user_ctrl::FIFO_EN : 0);
+}
+Status Mpu6500Regs::fifo_reset() {
+    return update_bits(reg::USER_CTRL, bits::user_ctrl::FIFO_RST, bits::user_ctrl::FIFO_RST);
+}
+Status Mpu6500Regs::read_fifo_count(uint16_t& count) const {
+    std::array<uint8_t, 2> buffer{};
+    MPU_RETURN_IF_ERROR(bus_.read_regs(reg::FIFO_COUNT_H, buffer));
+    count = static_cast<uint16_t>(((buffer[0] & bits::fifo_count::HIGH_MASK) << 8));
+    count |= buffer[1];
+    return Status::OK;
+}
+Status Mpu6500Regs::read_fifo_bytes(std::span<uint8_t> buffer) const {
+    return bus_.read_regs(reg::FIFO_R_W, buffer);
+}
+Status Mpu6500Regs::read_int_status(uint8_t& status) const {
+    return bus_.read_regs(reg::INT_STATUS, std::span<uint8_t>(&status, 1));
+}
 } // namespace mpu6500::detail

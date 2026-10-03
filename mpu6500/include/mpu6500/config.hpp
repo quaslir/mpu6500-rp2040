@@ -1,5 +1,6 @@
 #pragma once
 #include "math/vec3.hpp"
+#include <cstddef>
 #include <cstdint>
 namespace mpu6500::config {
 enum class AccelRange : uint8_t { G2 = 0, G4 = 1, G8 = 2, G16 = 3 };
@@ -98,11 +99,30 @@ struct Calibration {
     Vec3 gyro_offset_dps{};
     RawVec3 gyro_hw_offset{};
 };
+enum class FifoMode : uint8_t { Overwrite = 0, StopWhenFull = 1 };
+struct FifoSources {
+    bool accel{true};
+    bool temperature{false};
+    bool gyro{true};
+};
+
+struct Fifo {
+    bool enabled{false};
+    FifoSources sources;
+    FifoMode mode{FifoMode::Overwrite};
+};
+
+struct FifoReadResult {
+    size_t frames{};
+    bool overflowed{};
+};
+
 struct Config {
     bool use_i2c{true};
     Measurement measurement{};
     Power power{};
     Calibration calibration{};
+    Fifo fifo{};
 };
 
 } // namespace mpu6500::config

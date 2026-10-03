@@ -41,4 +41,11 @@ inline constexpr uint8_t ZG_OFFSET_H{0x17};
 inline constexpr uint8_t ZG_OFFSET_L{0x18};
 
 inline constexpr uint8_t LP_ACCEL_ODR{0x1E};
+
+// FIFO
+inline constexpr uint8_t FIFO_EN{0x23};
+inline constexpr uint8_t INT_STATUS{0x3A};
+inline constexpr uint8_t FIFO_COUNT_H{0x72};
+inline constexpr uint8_t FIFO_COUNT_L{0x73};
+inline constexpr uint8_t FIFO_R_W{0x74};
 } // namespace mpu6500::reg

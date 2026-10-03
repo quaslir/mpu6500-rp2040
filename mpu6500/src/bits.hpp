@@ -38,6 +38,8 @@ namespace user_ctrl {
 inline constexpr uint8_t I2C_IF_DIS{0x10};
 inline constexpr uint8_t SIG_COND_RST{
     0x01}; // bit 0, resets all signal paths and clears data registers
+inline constexpr uint8_t FIFO_EN = 0x40;
+inline constexpr uint8_t FIFO_RST = 0x04;
 } // namespace user_ctrl
 
 namespace signal_path_reset {
@@ -56,6 +58,7 @@ namespace config {
 inline constexpr uint8_t DLPF_CFG_MASK{0x07};     // bits 2:0, gyro/temp filter
 inline constexpr uint8_t EXT_SYNC_SET_MASK{0x38}; // bits 5:3, FSYNC (unused, keep 0)
 inline constexpr uint8_t FIFO_MODE{0x40};         // bit 6 (unused, keep 0)
+
 } // namespace config
 
 namespace accel_config2 {
@@ -73,4 +76,22 @@ inline constexpr uint8_t FCHOICE_B_USE_DLPF{0x00};
 namespace lp_accel_odr {
 inline constexpr uint8_t LPOSC_CLKSEL_MASK{0x0F}; // bits 3:0, wake-up rate code 0..11
 } // namespace lp_accel_odr
+
+namespace fifo_en {
+inline constexpr uint8_t TEMP{0x80};
+inline constexpr uint8_t GYRO_X{0x40};
+inline constexpr uint8_t GYRO_Y{0x20};
+inline constexpr uint8_t GYRO_Z{0x10};
+inline constexpr uint8_t ACCEL{0x08};
+inline constexpr uint8_t GYRO_ALL{GYRO_X | GYRO_Y | GYRO_Z};
+inline constexpr uint8_t MASK{TEMP | GYRO_ALL | ACCEL}; // bits 2..0 are SLV0..SLV2, untouched
+} // namespace fifo_en
+
+namespace int_status {
+inline constexpr uint8_t FIFO_OFLOW{0x10};
+} // namespace int_status
+
+namespace fifo_count {
+inline constexpr uint8_t HIGH_MASK{0x1F}; // FIFO_CNT[12:8]
+} // namespace fifo_count
 } // namespace mpu6500::bits

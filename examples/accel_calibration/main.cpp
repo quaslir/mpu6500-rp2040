@@ -32,7 +32,7 @@ Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool ra
     Vec3 sum{};
     for (uint16_t i = 0; i < samples; ++i) {
         Vec3 accel{};
-        const Status status = raw ? imu.read_accel_raw(accel) : imu.read_accel(accel);
+        const Status status = raw ? imu.read_accel_uncorrected(accel) : imu.read_accel(accel);
         if (status != Status::OK)
             return status;
         sum += accel;
@@ -77,8 +77,8 @@ Status run_calibration(mpu6500::Mpu6500& imu) {
                     CALIBRATION_ATTEMPTS,
                     static_cast<unsigned long>(duration_ms));
 
-        status = mpu6500::calibration::calibrate_accel(
-            imu, mpu6500::calibration::GRAVITY_Z_UP, options);
+        status =
+            mpu6500::calibration::calibrate_accel(imu, mpu6500::calibration::GRAVITY_Z_UP, options);
         if (status == Status::OK)
             return status;
 
@@ -172,7 +172,7 @@ int main() {
         Vec3 accel{};
         Vec3 accel_raw{};
         const Status status = imu.read_accel(accel);
-        const Status raw_status = imu.read_accel_raw(accel_raw);
+        const Status raw_status = imu.read_accel_uncorrected(accel_raw);
 
         if (status != Status::OK || raw_status != Status::OK) {
             std::printf("  read failed: %s / %s\n",

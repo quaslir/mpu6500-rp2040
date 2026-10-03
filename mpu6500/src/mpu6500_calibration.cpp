@@ -9,16 +9,17 @@ namespace mpu6500::calibration {
 
 namespace {
 Status read_one(const Mpu6500& imu, Sensor sensor, Vec3& sample) {
-    switch(sensor) {
-        case Sensor::Accel :
-            return imu.read_accel_raw(sample);
-        case Sensor::Gyro :
-            return imu.read_gyro_raw(sample);
-        default :
+    switch (sensor) {
+        case Sensor::Accel:
+            return imu.read_accel_uncorrected(sample);
+        case Sensor::Gyro:
+            return imu.read_gyro_uncorrected(sample);
+        default:
             return Status::ERROR;
     }
 }
-Status measure_mean_impl(const Mpu6500& imu, Sensor sensor,
+Status measure_mean_impl(const Mpu6500& imu,
+                         Sensor sensor,
                          Vec3& mean,
                          const MeasureOptions& options,
                          uint32_t period_ms) {
@@ -69,10 +70,7 @@ uint32_t hz_to_period_ms(float hz) {
 
 } // namespace
 
-Status measure_mean(const Mpu6500& imu,
-                    Sensor sensor,
-                    Vec3& mean,
-                    const MeasureOptions& options) {
+Status measure_mean(const Mpu6500& imu, Sensor sensor, Vec3& mean, const MeasureOptions& options) {
 
     switch (sensor) {
         case Sensor::Gyro:

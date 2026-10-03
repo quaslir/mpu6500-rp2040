@@ -26,7 +26,7 @@ Status measure_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, Vec
     Vec3 sum{};
     for (uint16_t i = 0; i < samples; ++i) {
         Vec3 gyro{};
-        const Status status = raw ? imu.read_gyro_raw(gyro) : imu.read_gyro(gyro);
+        const Status status = raw ? imu.read_gyro_uncorrected(gyro) : imu.read_gyro(gyro);
         if (status != Status::OK)
             return status;
         sum += gyro;
@@ -59,8 +59,8 @@ Status run_calibration(mpu6500::Mpu6500& imu) {
                     CALIBRATION_ATTEMPTS,
                     static_cast<unsigned long>(duration_ms));
 
-        status = mpu6500::calibration::calibrate_gyro(imu,
-                                                      mpu6500::calibration::DEFAULT_GYRO_OPTIONS);
+        status =
+            mpu6500::calibration::calibrate_gyro(imu, mpu6500::calibration::DEFAULT_GYRO_OPTIONS);
         if (status == Status::OK)
             return status;
 
@@ -141,7 +141,7 @@ int main() {
         Vec3 gyro{};
         Vec3 gyro_raw{};
         const Status status = imu.read_gyro(gyro);
-        const Status raw_status = imu.read_gyro_raw(gyro_raw);
+        const Status raw_status = imu.read_gyro_uncorrected(gyro_raw);
 
         if (status != Status::OK || raw_status != Status::OK) {
             std::printf("  read failed: %s / %s\n",

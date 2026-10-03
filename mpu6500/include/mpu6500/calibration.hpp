@@ -5,8 +5,8 @@
 #include <cstdint>
 
 namespace mpu6500 {
-    class Mpu6500;
-}
+class Mpu6500;
+} // namespace mpu6500
 
 namespace mpu6500::calibration {
 

@@ -43,6 +43,15 @@ public:
     [[nodiscard]] Status write_lp_accel_rate(config::LowPowerAccelRate rate_hz);
     [[nodiscard]] Status write_cycle(bool enabled);
 
+    // FIFO
+    [[nodiscard]] Status write_fifo_sources(const config::FifoSources& sources);
+    [[nodiscard]] Status write_fifo_mode(const config::FifoMode& mode);
+    [[nodiscard]] Status write_fifo_enabled(bool enabled);
+    [[nodiscard]] Status fifo_reset();
+    [[nodiscard]] Status read_fifo_count(uint16_t& count) const;
+    [[nodiscard]] Status read_fifo_bytes(std::span<uint8_t> buffer) const;
+    [[nodiscard]] Status read_int_status(uint8_t& status) const;
+
 private:
     [[nodiscard]] Status update_bits(uint8_t reg, uint8_t mask, uint8_t data);
     [[nodiscard]] Status write_int16(uint8_t high_reg, uint8_t low_reg, int16_t data);

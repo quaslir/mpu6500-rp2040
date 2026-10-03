@@ -31,9 +31,9 @@ public:
     [[nodiscard]] Status read_gyro(Vec3& sample) const;
     [[nodiscard]] Status read_temp(float& sample) const;
 
-    [[nodiscard]] Status read_all_raw(Sample& sample) const;
-    [[nodiscard]] Status read_accel_raw(Vec3& sample) const;
-    [[nodiscard]] Status read_gyro_raw(Vec3& sample) const;
+    [[nodiscard]] Status read_all_uncorrected(Sample& sample) const;
+    [[nodiscard]] Status read_accel_uncorrected(Vec3& sample) const;
+    [[nodiscard]] Status read_gyro_uncorrected(Vec3& sample) const;
 
     // Filters
     [[nodiscard]] Status set_gyro_filter(config::GyroFilter filter);
@@ -68,6 +68,12 @@ public:
     [[nodiscard]] bool is_low_power() const;
     [[nodiscard]] config::LowPowerAccelRate low_power_rate() const;
     [[nodiscard]] WaitFunction wait() const;
+
+    // FIFO
+
+    [[nodiscard]] Status fifo_reset();
+    [[nodiscard]] Status fifo_frame_count(uint16_t& count) const;
+    [[nodiscard]] Status read_fifo(std::span<Sample> samples, config::FifoReadResult& fifo_result);
 
 private:
     [[nodiscard]] Status apply_config();

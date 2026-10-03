@@ -100,6 +100,18 @@ Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.write_sample_rate_divider(config_.measurement.sample_divider));
 
     MPU_RETURN_IF_ERROR(regs_.write_gyro_hw_offset(config_.calibration.gyro_hw_offset));
+
+    MPU_RETURN_IF_ERROR(regs_.write_fifo_enabled(false));
+
+    MPU_RETURN_IF_ERROR(regs_.write_fifo_sources(config_.fifo.sources));
+
+    MPU_RETURN_IF_ERROR(regs_.write_fifo_mode(config_.fifo.mode));
+
+    MPU_RETURN_IF_ERROR(regs_.fifo_reset());
+
+    if (config_.fifo.enabled) {
+        MPU_RETURN_IF_ERROR(regs_.write_fifo_enabled(true));
+    }
     return Status::OK;
 }
 

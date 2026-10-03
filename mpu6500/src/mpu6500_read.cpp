@@ -3,7 +3,7 @@
 #include "layout.hpp"
 #include "mpu6500/mpu6500.hpp"
 namespace mpu6500 {
-Status Mpu6500::read_all_raw(Sample& sample) const {
+Status Mpu6500::read_all_uncorrected(Sample& sample) const {
     std::array<uint8_t, layout::BURST_SIZE> sample_buffer{};
     MPU_RETURN_IF_ERROR(regs_.read_burst(sample_buffer));
     // fill acceleration
@@ -25,7 +25,7 @@ Status Mpu6500::read_all_raw(Sample& sample) const {
     return Status::OK;
 }
 
-Status Mpu6500::read_accel_raw(Vec3& sample) const {
+Status Mpu6500::read_accel_uncorrected(Vec3& sample) const {
     std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
     MPU_RETURN_IF_ERROR(regs_.read_accel_bytes(sample_buffer));
 
@@ -35,7 +35,7 @@ Status Mpu6500::read_accel_raw(Vec3& sample) const {
 
     return Status::OK;
 }
-Status Mpu6500::read_gyro_raw(Vec3& sample) const {
+Status Mpu6500::read_gyro_uncorrected(Vec3& sample) const {
     std::array<uint8_t, layout::VEC3_SIZE> sample_buffer{};
     MPU_RETURN_IF_ERROR(regs_.read_gyro_bytes(sample_buffer));
 
@@ -47,20 +47,20 @@ Status Mpu6500::read_gyro_raw(Vec3& sample) const {
 }
 
 Status Mpu6500::read_all(Sample& sample) const {
-    MPU_RETURN_IF_ERROR(read_all_raw(sample));
+    MPU_RETURN_IF_ERROR(read_all_uncorrected(sample));
     sample.accel_g -= config_.calibration.accel_offset_g;
     sample.gyro_dps -= config_.calibration.gyro_offset_dps;
 
     return Status::OK;
 }
 Status Mpu6500::read_accel(Vec3& sample) const {
-    MPU_RETURN_IF_ERROR(read_accel_raw(sample));
+    MPU_RETURN_IF_ERROR(read_accel_uncorrected(sample));
     sample -= config_.calibration.accel_offset_g;
 
     return Status::OK;
 }
 Status Mpu6500::read_gyro(Vec3& sample) const {
-    MPU_RETURN_IF_ERROR(read_gyro_raw(sample));
+    MPU_RETURN_IF_ERROR(read_gyro_uncorrected(sample));
     sample -= config_.calibration.gyro_offset_dps;
     return Status::OK;
 }
