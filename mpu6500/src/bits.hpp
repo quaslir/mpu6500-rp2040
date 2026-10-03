@@ -94,4 +94,21 @@ inline constexpr uint8_t FIFO_OFLOW{0x10};
 namespace fifo_count {
 inline constexpr uint8_t HIGH_MASK{0x1F}; // FIFO_CNT[12:8]
 } // namespace fifo_count
+
+namespace int_pin_cfg {
+inline constexpr uint8_t ACTL{0x80};         // 1 = INT pin active low
+inline constexpr uint8_t OPEN{0x40};         // 1 = open drain, 0 = push-pull
+inline constexpr uint8_t LATCH_INT_EN{0x20}; // 1 = held until INT_STATUS is read, 0 = 50 us pulse
+inline constexpr uint8_t INT_ANYRD_2CLEAR{0x10}; // 1 = any read clears flags (driver keeps it 0)
+inline constexpr uint8_t MASK{ACTL | OPEN | LATCH_INT_EN |
+                              INT_ANYRD_2CLEAR}; // FSYNC/bypass untouched
+} // namespace int_pin_cfg
+
+namespace int_enable {
+inline constexpr uint8_t WOM{0x40};
+inline constexpr uint8_t FIFO_OFLOW{0x10};
+inline constexpr uint8_t FSYNC{0x08};
+inline constexpr uint8_t RAW_RDY{0x01};
+inline constexpr uint8_t MASK{WOM | FIFO_OFLOW | FSYNC | RAW_RDY};
+} // namespace int_enable
 } // namespace mpu6500::bits
