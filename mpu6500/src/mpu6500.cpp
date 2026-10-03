@@ -4,7 +4,6 @@
 #include "bus/status.hpp"
 #include "device.hpp"
 #include "mpu6500/config.hpp"
-#include "registers.hpp"
 #include <cmath>
 #include <cstdint>
 
@@ -42,7 +41,7 @@ float low_power_rate_to_hz(mpu6500::config::LowPowerAccelRate rate) {
 } // namespace
 namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
-    : regs_(bus), wait_(wait), config_(config), low_mode_(config::LowPowerMode{}) {}
+    : regs_(bus), wait_(wait), config_(config), low_mode_(config::LowPowerMode{}), pending_int_flags_(0) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return regs_.read_who_am_i(id);
@@ -186,5 +185,12 @@ Status Mpu6500::set_sample_rate_hz(uint16_t hz) {
 
 WaitFunction Mpu6500::wait() const {
     return wait_;
+}
+
+Status Mpu6500::poll_int_status() {
+    uint8_t int_status{};
+    MPU_RETURN_IF_ERROR(regs_.read_int_status(int_status));
+    pending_int_flags_ |= int_status;
+    return Status::OK;
 }
 } // namespace mpu6500

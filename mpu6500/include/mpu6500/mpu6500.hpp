@@ -8,6 +8,7 @@
 #include "mpu6500/detail/mpu6500_registers.hpp"
 #include "mpu6500/sample.hpp"
 #include <cstdint>
+#include <pico/types.h>
 namespace mpu6500 {
 
 using WaitFunction = void (*)(uint32_t delay_ms);
@@ -77,9 +78,11 @@ public:
 
 private:
     [[nodiscard]] Status apply_config();
+    [[nodiscard]] Status poll_int_status();
     detail::Mpu6500Regs regs_;
     WaitFunction wait_;
     config::Config config_;
     config::LowPowerMode low_mode_;
+    uint8_t pending_int_flags_;
 };
 } // namespace mpu6500
