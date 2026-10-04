@@ -1,10 +1,10 @@
-#include "registers/bits.hpp"
 #include "bus/status.hpp"
 #include "codec/decode.hpp"
-#include "device.hpp"
 #include "codec/fifo_frame.hpp"
+#include "device.hpp"
 #include "mpu6500/config.hpp"
 #include "mpu6500/mpu6500.hpp"
+#include "registers/bits.hpp"
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -31,7 +31,7 @@ bus::Status Mpu6500::fifo_reset() {
     return bus::Status::OK;
 }
 [[nodiscard]] bus::Status Mpu6500::read_fifo(std::span<Sample> samples,
-                                        config::FifoReadResult& fifo_result) {
+                                             FifoReadResult& fifo_result) {
 
     fifo_result.frames = 0;
     fifo_result.overflowed = false;

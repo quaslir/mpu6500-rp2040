@@ -16,21 +16,20 @@ bus::Status Mpu6500::take_interrupt_flags(InterruptFlags& flags) {
     if (flags.raw_data_ready) {
         pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::RAW_DATA_RDY);
     }
-    if(flags.wake_on_motion) {
+    if (flags.wake_on_motion) {
         pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::WOM);
     }
     return bus::Status::OK;
 }
-
 
 bus::Status Mpu6500::set_wake_on_motion(bool enabled) {
     MPU_RETURN_IF_ERROR(regs_.write_accel_intel(enabled));
     config_.wake_on_motion.enabled = enabled;
     return bus::Status::OK;
 }
- bus::Status Mpu6500::set_wom_threshold(uint16_t threshold) {
-     MPU_RETURN_IF_ERROR(regs_.write_wom_threshold(threshold));
-     config_.wake_on_motion.threshold_mg = threshold;
-     return bus::Status::OK;
- }
+bus::Status Mpu6500::set_wom_threshold(uint16_t threshold) {
+    MPU_RETURN_IF_ERROR(regs_.write_wom_threshold(threshold));
+    config_.wake_on_motion.threshold_mg = threshold;
+    return bus::Status::OK;
 }
+} // namespace mpu6500

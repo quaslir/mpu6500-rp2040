@@ -9,7 +9,6 @@ target_include_directories(bus_pico PUBLIC
 
 target_link_libraries(bus_pico PUBLIC
     bus
-    pico_stdlib
     hardware_spi
     hardware_i2c
 )

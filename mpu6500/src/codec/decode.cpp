@@ -1,9 +1,9 @@
 #include "codec/decode.hpp"
 
 #include "codec/layout.hpp"
+#include "codec/scales.hpp"
 #include "math/vec3.hpp"
 #include "mpu6500/config.hpp"
-#include "codec/scales.hpp"
 #include <cstdint>
 #include <span>
 namespace detail {
@@ -39,7 +39,8 @@ float gyro_range_to_scale(mpu6500::config::GyroRange range) {
     }
     return mpu6500::scale::GYRO_DPS250;
 }
-math::Vec3 decode_vec3(std::span<const uint8_t, mpu6500::layout::VEC3_SIZE> sample_buffer, float scale) {
+math::Vec3 decode_vec3(std::span<const uint8_t, mpu6500::layout::VEC3_SIZE> sample_buffer,
+                       float scale) {
     const math::RawVec3 raw = bytes_to_raw_vec3(sample_buffer);
     return raw_vec3_to_vec3(raw, scale);
 }

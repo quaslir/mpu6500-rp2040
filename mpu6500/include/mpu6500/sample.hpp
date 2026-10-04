@@ -1,6 +1,6 @@
 #pragma once
 #include "math/vec3.hpp"
-namespace sample {
+namespace mpu6500 {
 struct Sample {
     math::Vec3 accel_g{};
     math::Vec3 gyro_dps{};
@@ -11,4 +11,9 @@ struct InterruptFlags {
     bool fifo_overflow{};
     bool wake_on_motion{};
 };
-}
+
+struct FifoReadResult {
+    size_t frames{};
+    bool overflowed{};
+};
+} // namespace mpu6500

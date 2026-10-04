@@ -1,6 +1,6 @@
-// Interrupt demo: the MPU6500 sends a short pulse on its INT pin for every new sample (100 Hz).
+// Interrupt demo: the MPU6500 sends a short pulse on its INT pin for every new sample.
 // The GPIO interrupt only raises a flag, the main loop asks the driver what happened
-// and reads the sample. Expect about 100 events per second.
+// and reads the sample. Expect one event per sample.
 
 #include "bus_pico/i2c_bus.hpp"
 #include "example_utils.hpp"
@@ -21,7 +21,7 @@ namespace cal = mpu6500::calibration;
 constexpr uint GPIO_INT = 14; // MPU6500 INT pin -> Pico GPIO, change to your wiring
 constexpr uint32_t STARTUP_DELAY_MS = 3000;
 constexpr uint32_t I2C_TIMEOUT_US = 30000;
-constexpr uint8_t SAMPLE_DIVIDER = 0;            // 1000 / (1 + 9) = 100 Hz
+constexpr uint8_t SAMPLE_DIVIDER = 0;            // 1000 / (1 + 0) = 1000 Hz
 constexpr uint64_t REPORT_PERIOD_US = 1'000'000; // print once per second
 
 // Set by the GPIO interrupt, cleared by the main loop. No I2C in the interrupt.
@@ -79,13 +79,13 @@ int main() {
 
     // In pulse mode the pin releases itself, but flags collected during calibration are
     // still pending in the driver: take them once so the loop starts clean.
-    InterruptFlags flags{};
+    mpu6500::InterruptFlags flags{};
     const bus::Status clear_status = imu.take_interrupt_flags(flags);
     example::print_status("take_interrupt_flags", clear_status);
     std::printf("\n");
 
     // --- loop ------------------------------------------------------------------
-    Sample last_sample{};
+    mpu6500::Sample last_sample{};
     uint32_t events = 0;
     uint32_t samples = 0;
     uint32_t failed_reads = 0;

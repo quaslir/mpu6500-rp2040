@@ -23,7 +23,7 @@ int main() {
     std::printf("%-26s | %-32s | %s\n", "accel [g]", "gyro [dps]", "temp [C]");
 
     for (;;) {
-        Sample sample{};
+        mpu6500::Sample sample{};
         const bus::Status status = mpu6500.read_all(sample);
 
         if (status != bus::Status::OK) {

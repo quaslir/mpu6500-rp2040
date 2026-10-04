@@ -165,7 +165,7 @@ int main() {
         const float dt_s = static_cast<float>(now_us - last_us) * 1e-6f;
         last_us = now_us;
 
-        Sample sample{};
+        mpu6500::Sample sample{};
         const bus::Status status = imu.read_all(sample);
         if (status != bus::Status::OK) {
             std::printf("  read failed: %s\n", example::status_text(status));

@@ -28,7 +28,7 @@ constexpr int READS_BETWEEN_OVERFLOWS = 50;     // force an overflow every 5 s
 constexpr uint32_t OVERFLOW_PAUSE_MS = 1000;    // buffer holds 512 / 12 = 42 frames = 420 ms
 constexpr std::size_t MAX_FRAMES_PER_READ = 64; // more than the FIFO can ever hold (42)
 
-void print_frames(int index, std::size_t frames, const Sample& last) {
+void print_frames(int index, std::size_t frames, const mpu6500::Sample& last) {
     std::printf("  read %4d: %2u frames | last: accel z %+6.3f g | gyro %+6.2f %+6.2f %+6.2f dps\n",
                 index,
                 static_cast<unsigned>(frames),
@@ -90,7 +90,7 @@ int main() {
                 static_cast<unsigned long>(OVERFLOW_PAUSE_MS));
 
     // --- loop ----------------------------------------------------------------
-    std::array<Sample, MAX_FRAMES_PER_READ> samples{};
+    std::array<mpu6500::Sample, MAX_FRAMES_PER_READ> samples{};
 
     absolute_time_t next_read = get_absolute_time();
     uint64_t window_start_us = time_us_64();
@@ -112,7 +112,7 @@ int main() {
             sleep_until(next_read);
         }
 
-        cfg::FifoReadResult result{};
+        mpu6500::FifoReadResult result{};
         const bus::Status status = imu.read_fifo(samples, result);
         if (status != bus::Status::OK) {
             std::printf("  read %4d: failed (%s)\n", read_index, example::status_text(status));

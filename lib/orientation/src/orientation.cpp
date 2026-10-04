@@ -18,7 +18,8 @@ void ComplementaryFilter::reset() {
 Angles ComplementaryFilter::angles() const {
     return angles_;
 }
-Angles ComplementaryFilter::update(const math::Vec3& accel, const math::Vec3& gyro_dps, float dt_s) {
+Angles
+ComplementaryFilter::update(const math::Vec3& accel, const math::Vec3& gyro_dps, float dt_s) {
     if (dt_s <= 0.0f)
         return angles_;
     Angles accel_ang = tilt_from_accel(accel);

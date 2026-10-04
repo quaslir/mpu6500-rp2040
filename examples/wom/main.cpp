@@ -24,8 +24,8 @@ constexpr uint32_t I2C_TIMEOUT_US = 3000;
 constexpr uint16_t THRESHOLD_MG = 100; // change between two samples that counts as motion
 constexpr cfg::LowPowerAccelRate WAKE_RATE = cfg::LowPowerAccelRate::Hz31_25;
 
-constexpr uint64_t MOTION_END_US = 500'000;      // no event for 0.5 s -> motion is over
-constexpr uint64_t IDLE_REPORT_US = 5'000'000;   // "still idle" line every 5 s
+constexpr uint64_t MOTION_END_US = 500'000;    // no event for 0.5 s -> motion is over
+constexpr uint64_t IDLE_REPORT_US = 5'000'000; // "still idle" line every 5 s
 
 // Set by the GPIO interrupt, cleared by the main loop. No I2C in the interrupt.
 static volatile bool pending_int = false;
@@ -80,7 +80,7 @@ int main() {
     std::printf("  GPIO %u configured, rising edge interrupt enabled\n", GPIO_INT);
 
     // Drop anything that was flagged while the board was being picked up and plugged in.
-    InterruptFlags flags{};
+    mpu6500::InterruptFlags flags{};
     const bus::Status clear_status = imu.take_interrupt_flags(flags);
     example::print_status("take_interrupt_flags", clear_status);
 

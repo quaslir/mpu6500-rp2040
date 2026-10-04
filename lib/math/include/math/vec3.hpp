@@ -82,4 +82,4 @@ inline Vec3 component_max(const Vec3& vec1, const Vec3& vec2) {
 
     return vec;
 }
-}
+} // namespace math

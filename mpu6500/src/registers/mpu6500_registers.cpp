@@ -210,7 +210,7 @@ bus::Status Mpu6500Regs::write_int_sources(const config::InterruptSources& sourc
     if (sources.fifo_overflow) {
         byte |= bits::int_enable::FIFO_OFLOW;
     }
-    if(sources.wake_on_motion) {
+    if (sources.wake_on_motion) {
         byte |= bits::int_enable::WOM;
     }
     return update_bits(reg::INT_ENABLE, bits::int_enable::MASK, byte);
@@ -221,7 +221,10 @@ bus::Status Mpu6500Regs::write_wom_threshold(uint16_t threshold) {
     return bus_.write_reg(reg::WOM_THR, static_cast<uint8_t>(normalized));
 }
 bus::Status Mpu6500Regs::write_accel_intel(bool enabled) {
-    return update_bits(reg::ACCEL_INTEL_CTRL, bits::accel_intel_ctrl::MASK, enabled ?
-        bits::accel_intel_ctrl::ACCEL_INTEL_MODE | bits::accel_intel_ctrl::ACCEL_INTEL_EN : 0);
+    return update_bits(reg::ACCEL_INTEL_CTRL,
+                       bits::accel_intel_ctrl::MASK,
+                       enabled ? bits::accel_intel_ctrl::ACCEL_INTEL_MODE |
+                                     bits::accel_intel_ctrl::ACCEL_INTEL_EN
+                               : 0);
 }
 } // namespace mpu6500::detail

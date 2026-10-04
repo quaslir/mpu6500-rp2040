@@ -19,7 +19,7 @@ public:
     Mpu6500& operator=(const Mpu6500&) = delete;
 
     [[nodiscard]] bus::Status init();
-    [[nodiscard]] bus::Status who_am_i(uint8_t& id);
+    [[nodiscard]] bus::Status who_am_i(uint8_t& id) const;
 
     [[nodiscard]] const config::Config& config() const;
 
@@ -56,7 +56,8 @@ public:
     [[nodiscard]] bus::Status set_clock_source(config::ClockSource source);
     [[nodiscard]] bus::Status set_enabled_axes(const config::EnabledAxes& enabled);
 
-    [[nodiscard]] bus::Status reset_signal_paths(bool gyro = true, bool accel = true, bool temp = true);
+    [[nodiscard]] bus::Status
+    reset_signal_paths(bool gyro = true, bool accel = true, bool temp = true);
     [[nodiscard]] bus::Status reset_sensor_registers();
 
     [[nodiscard]] float gyro_sample_rate_hz() const;
@@ -71,16 +72,16 @@ public:
 
     [[nodiscard]] bus::Status fifo_reset();
     [[nodiscard]] bus::Status fifo_frame_count(uint16_t& count) const;
-    [[nodiscard]] bus::Status read_fifo(std::span<Sample> samples, config::FifoReadResult& fifo_result);
+    [[nodiscard]] bus::Status read_fifo(std::span<Sample> samples, FifoReadResult& fifo_result);
 
     // INTERRUPTS
     [[nodiscard]] bus::Status take_interrupt_flags(InterruptFlags& flags);
-
 
     // Wake on motion
 
     [[nodiscard]] bus::Status set_wake_on_motion(bool enabled);
     [[nodiscard]] bus::Status set_wom_threshold(uint16_t threshold);
+
 private:
     [[nodiscard]] bus::Status apply_config();
     [[nodiscard]] bus::Status poll_int_status();

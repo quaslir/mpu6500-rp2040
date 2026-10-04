@@ -114,7 +114,7 @@ void measure_and_print(mpu6500::Mpu6500& imu, const FilterStep& step) {
     int failed_reads = 0;
 
     for (int i = 0; i < SAMPLES_PER_STEP; ++i) {
-        Sample sample{};
+        mpu6500::Sample sample{};
         if (imu.read_all(sample) == bus::Status::OK) {
             accel.add(sample.accel_g);
             gyro.add(sample.gyro_dps);

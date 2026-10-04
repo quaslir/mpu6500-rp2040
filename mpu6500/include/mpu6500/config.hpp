@@ -102,10 +102,6 @@ struct Fifo {
     FifoMode mode{FifoMode::Overwrite};
 };
 
-struct FifoReadResult {
-    size_t frames{};
-    bool overflowed{};
-};
 enum class IntLevel : uint8_t { ActiveHigh = 0, ActiveLow = 1 };
 
 enum class IntDrive : uint8_t { PushPull = 0, OpenDrain = 1 };

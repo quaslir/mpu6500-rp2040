@@ -1,11 +1,10 @@
-#include "mpu6500/mpu6500.hpp"
-
-#include "registers/bits.hpp"
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
 #include "device.hpp"
 #include "mpu6500/config.hpp"
+#include "mpu6500/mpu6500.hpp"
 #include "mpu6500/sample.hpp"
+#include "registers/bits.hpp"
 #include <cmath>
 #include <cstdint>
 
@@ -45,7 +44,7 @@ namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
     : regs_(bus), wait_(wait), config_(config), pending_int_flags_(0) {}
 
-bus::Status Mpu6500::who_am_i(uint8_t& id) {
+bus::Status Mpu6500::who_am_i(uint8_t& id) const {
     return regs_.read_who_am_i(id);
 }
 
@@ -86,16 +85,16 @@ bus::Status Mpu6500::apply_config() {
 
     MPU_RETURN_IF_ERROR(regs_.write_gyro_hw_offset(config_.calibration.gyro_hw_offset));
     MPU_RETURN_IF_ERROR(regs_.write_wom_threshold(config_.wake_on_motion.threshold_mg));
-        MPU_RETURN_IF_ERROR(regs_.write_accel_intel(config_.wake_on_motion.enabled));
+    MPU_RETURN_IF_ERROR(regs_.write_accel_intel(config_.wake_on_motion.enabled));
     MPU_RETURN_IF_ERROR(apply_power());
     MPU_RETURN_IF_ERROR(regs_.write_fifo_enabled(false));
-
-    MPU_RETURN_IF_ERROR(regs_.write_fifo_sources(config_.fifo.sources));
+    MPU_RETURN_IF_ERROR(regs_.write_fifo_sources(
+        config_.fifo.enabled ? config_.fifo.sources : config::FifoSources{false, false, false}));
 
     MPU_RETURN_IF_ERROR(regs_.write_fifo_mode(config_.fifo.mode));
 
     MPU_RETURN_IF_ERROR(regs_.fifo_reset());
-    uint8_t discarded{}; // UNUSED
+    uint8_t discarded{}; // reading INT_STATUS clears stale flags from before init
     MPU_RETURN_IF_ERROR(regs_.read_int_status(discarded));
     pending_int_flags_ = 0;
     if (config_.fifo.enabled) {
@@ -178,6 +177,5 @@ bus::Status Mpu6500::set_sample_rate_hz(uint16_t hz) {
 WaitFunction Mpu6500::wait() const {
     return wait_;
 }
-
 
 } // namespace mpu6500

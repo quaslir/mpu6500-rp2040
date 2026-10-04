@@ -1,5 +1,6 @@
-#include "bus/status.hpp"
 #include "mpu6500/calibration.hpp"
+
+#include "bus/status.hpp"
 #include "mpu6500/config.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include <algorithm>
@@ -20,10 +21,10 @@ bus::Status read_one(const Mpu6500& imu, Sensor sensor, math::Vec3& sample) {
     }
 }
 bus::Status measure_mean_impl(const Mpu6500& imu,
-                         Sensor sensor,
-                         math::Vec3& mean,
-                         const MeasureOptions& options,
-                         uint32_t period_ms) {
+                              Sensor sensor,
+                              math::Vec3& mean,
+                              const MeasureOptions& options,
+                              uint32_t period_ms) {
 
     if (options.samples == 0)
         return bus::Status::ERROR;
@@ -71,7 +72,8 @@ uint32_t hz_to_period_ms(float hz) {
 
 } // namespace
 
-bus::Status measure_mean(const Mpu6500& imu, Sensor sensor, math::Vec3& mean, const MeasureOptions& options) {
+bus::Status
+measure_mean(const Mpu6500& imu, Sensor sensor, math::Vec3& mean, const MeasureOptions& options) {
 
     switch (sensor) {
         case Sensor::Gyro:
@@ -87,7 +89,8 @@ bus::Status measure_mean(const Mpu6500& imu, Sensor sensor, math::Vec3& mean, co
     }
 }
 
-bus::Status measure_gyro_offset(const Mpu6500& imu, math::Vec3& offset, const MeasureOptions& options) {
+bus::Status
+measure_gyro_offset(const Mpu6500& imu, math::Vec3& offset, const MeasureOptions& options) {
     return measure_mean(imu, Sensor::Gyro, offset, options);
 }
 bus::Status calibrate_gyro(Mpu6500& imu, const MeasureOptions& options) {
@@ -99,9 +102,9 @@ bus::Status calibrate_gyro(Mpu6500& imu, const MeasureOptions& options) {
 }
 
 bus::Status measure_accel_offset(const Mpu6500& imu,
-                            math::Vec3& offset,
-                            const math::Vec3& expected_gravity_g,
-                            const MeasureOptions& options) {
+                                 math::Vec3& offset,
+                                 const math::Vec3& expected_gravity_g,
+                                 const MeasureOptions& options) {
     math::Vec3 mean{};
     MPU_RETURN_IF_ERROR(measure_mean(imu, Sensor::Accel, mean, options));
 

@@ -28,7 +28,8 @@ float magnitude(const math::Vec3& v) {
 }
 
 // Average of `samples` accel readings, with or without the stored offset.
-bus::Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, math::Vec3& mean) {
+bus::Status
+measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, math::Vec3& mean) {
     math::Vec3 sum{};
     for (uint16_t i = 0; i < samples; ++i) {
         math::Vec3 accel{};

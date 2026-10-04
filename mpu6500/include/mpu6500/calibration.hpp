@@ -29,16 +29,17 @@ inline constexpr float MAX_GRAVITY_G{1.2f};
 [[nodiscard]] bus::Status
 measure_mean(const Mpu6500& imu, Sensor sensor, math::Vec3& mean, const MeasureOptions& options);
 [[nodiscard]] bus::Status measure_gyro_offset(const Mpu6500& imu,
-                                         math::Vec3& offset,
-                                         const MeasureOptions& options = DEFAULT_GYRO_OPTIONS);
+                                              math::Vec3& offset,
+                                              const MeasureOptions& options = DEFAULT_GYRO_OPTIONS);
 [[nodiscard]] bus::Status calibrate_gyro(Mpu6500& imu,
-                                    const MeasureOptions& options = DEFAULT_GYRO_OPTIONS);
+                                         const MeasureOptions& options = DEFAULT_GYRO_OPTIONS);
 
-[[nodiscard]] bus::Status measure_accel_offset(const Mpu6500& imu,
-                                          math::Vec3& offset,
+[[nodiscard]] bus::Status
+measure_accel_offset(const Mpu6500& imu,
+                     math::Vec3& offset,
+                     const math::Vec3& expected_gravity_g = GRAVITY_Z_UP,
+                     const MeasureOptions& options = DEFAULT_ACCEL_OPTIONS);
+[[nodiscard]] bus::Status calibrate_accel(Mpu6500& imu,
                                           const math::Vec3& expected_gravity_g = GRAVITY_Z_UP,
                                           const MeasureOptions& options = DEFAULT_ACCEL_OPTIONS);
-[[nodiscard]] bus::Status calibrate_accel(Mpu6500& imu,
-                                     const math::Vec3& expected_gravity_g = GRAVITY_Z_UP,
-                                     const MeasureOptions& options = DEFAULT_ACCEL_OPTIONS);
 } // namespace mpu6500::calibration

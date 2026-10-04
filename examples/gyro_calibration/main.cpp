@@ -22,7 +22,8 @@ constexpr uint16_t CHECK_SAMPLES = 100; // samples used for the before/after com
 constexpr uint32_t LIVE_PRINT_PERIOD_MS = 200;
 
 // Average of `samples` gyro readings, with or without the stored offset.
-bus::Status measure_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, math::Vec3& mean) {
+bus::Status
+measure_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, math::Vec3& mean) {
     math::Vec3 sum{};
     for (uint16_t i = 0; i < samples; ++i) {
         math::Vec3 gyro{};

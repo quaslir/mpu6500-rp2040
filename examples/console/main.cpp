@@ -168,7 +168,7 @@ uint32_t now_ms() {
     return to_ms_since_boot(get_absolute_time());
 }
 
-void print_sample(const Sample& s) {
+void print_sample(const mpu6500::Sample& s) {
     std::printf("accel %+7.3f %+7.3f %+7.3f g | gyro %+8.2f %+8.2f %+8.2f dps | temp %6.2f C\n",
                 s.accel_g.x,
                 s.accel_g.y,
@@ -355,7 +355,7 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
     } else if (std::strcmp(cmd, "init") == 0) {
         print_result("init", imu.init());
     } else if (std::strcmp(cmd, "read") == 0) {
-        Sample sample{};
+        mpu6500::Sample sample{};
         const bus::Status status = imu.read_all(sample);
         if (status == bus::Status::OK)
             print_sample(sample);
@@ -597,7 +597,7 @@ int main() {
 
         if (state.streaming && now_ms() - state.last_stream_ms >= state.stream_period_ms) {
             state.last_stream_ms = now_ms();
-            Sample sample{};
+            mpu6500::Sample sample{};
             const bus::Status status = imu.read_all(sample);
             if (status == bus::Status::OK)
                 print_sample(sample);
