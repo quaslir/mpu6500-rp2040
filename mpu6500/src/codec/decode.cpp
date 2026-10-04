@@ -1,9 +1,9 @@
-#include "decode.hpp"
+#include "codec/decode.hpp"
 
-#include "layout.hpp"
+#include "codec/layout.hpp"
 #include "math/vec3.hpp"
 #include "mpu6500/config.hpp"
-#include "scales.hpp"
+#include "codec/scales.hpp"
 #include <cstdint>
 #include <span>
 namespace detail {

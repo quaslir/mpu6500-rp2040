@@ -1,8 +1,8 @@
-#include "bits.hpp"
+#include "registers/bits.hpp"
 #include "bus/status.hpp"
-#include "decode.hpp"
+#include "codec/decode.hpp"
 #include "device.hpp"
-#include "fifo_frame.hpp"
+#include "codec/fifo_frame.hpp"
 #include "mpu6500/config.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include <algorithm>

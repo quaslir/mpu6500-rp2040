@@ -1,6 +1,6 @@
 #include "bus/status.hpp"
-#include "decode.hpp"
-#include "layout.hpp"
+#include "codec/decode.hpp"
+#include "codec/layout.hpp"
 #include "mpu6500/mpu6500.hpp"
 namespace mpu6500 {
 Status Mpu6500::read_all_uncorrected(Sample& sample) const {

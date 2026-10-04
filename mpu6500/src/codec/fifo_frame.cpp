@@ -1,7 +1,7 @@
-#include "fifo_frame.hpp"
+#include "codec/fifo_frame.hpp"
 
-#include "decode.hpp"
-#include "layout.hpp"
+#include "codec/decode.hpp"
+#include "codec/layout.hpp"
 #include "mpu6500/sample.hpp"
 #include <cstddef>
 #include <cstdint>

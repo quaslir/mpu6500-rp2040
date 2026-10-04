@@ -1,13 +1,15 @@
 add_library(mpu6500 STATIC
-    src/mpu6500.cpp
-    src/mpu6500_registers.cpp
-    src/decode.cpp
-    src/mpu6500_calibration.cpp
-    src/mpu6500_config.cpp
-    src/mpu6500_power.cpp
-    src/mpu6500_read.cpp
-    src/mpu6500_fifo.cpp
-    src/fifo_frame.cpp
+    src/driver/lifecycle.cpp
+src/driver/measurement.cpp
+src/driver/read.cpp
+src/driver/power.cpp
+src/driver/fifo.cpp
+src/driver/interrupts.cpp
+src/registers/mpu6500_registers.cpp
+src/codec/decode.cpp
+src/codec/fifo_frame.cpp
+src/calibration.cpp
+
 )
 
 target_include_directories(mpu6500

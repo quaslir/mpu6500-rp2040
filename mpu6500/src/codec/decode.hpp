@@ -1,5 +1,5 @@
 #pragma once
-#include "layout.hpp"
+#include "codec/layout.hpp"
 #include "math/vec3.hpp"
 #include "mpu6500/config.hpp"
 #include <cstdint>

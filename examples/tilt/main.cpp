@@ -6,7 +6,7 @@
 #include "i2c_config.hpp"
 #include "mpu6500/calibration.hpp"
 #include "mpu6500/mpu6500.hpp"
-#include "orientation.hpp"
+#include "orientation/orientation.hpp"
 #include <cmath>
 #include <cstdint>
 #include <cstdio>

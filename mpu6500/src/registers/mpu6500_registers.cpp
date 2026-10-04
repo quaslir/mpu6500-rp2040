@@ -5,7 +5,7 @@
 #include "bus/status.hpp"
 #include "device.hpp"
 #include "mpu6500/config.hpp"
-#include "registers.hpp"
+#include "registers/register_map.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -216,9 +216,9 @@ Status Mpu6500Regs::write_int_sources(const config::InterruptSources& sources) {
     return update_bits(reg::INT_ENABLE, bits::int_enable::MASK, byte);
 }
 Status Mpu6500Regs::write_wom_threshold(uint16_t threshold) {
-    uint8_t normalized = static_cast<uint8_t>(threshold / device::WOM_THRESHOLD_MG_PER_LSB);
-    normalized = std::min<uint8_t>(normalized, 255);
-    return bus_.write_reg(reg::WOM_THR, normalized);
+    uint16_t divided = static_cast<uint16_t>(threshold / device::WOM_THRESHOLD_MG_PER_LSB);
+    uint16_t normalized = std::min<uint16_t>(divided, 255);
+    return bus_.write_reg(reg::WOM_THR, static_cast<uint8_t>(normalized));
 }
 Status Mpu6500Regs::write_accel_intel(bool enabled) {
     return update_bits(reg::ACCEL_INTEL_CTRL, bits::accel_intel_ctrl::MASK, enabled ?
