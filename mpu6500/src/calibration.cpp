@@ -9,7 +9,7 @@
 namespace mpu6500::calibration {
 
 namespace {
-bus::Status read_one(const Mpu6500& imu, Sensor sensor, Vec3& sample) {
+bus::Status read_one(const Mpu6500& imu, Sensor sensor, math::Vec3& sample) {
     switch (sensor) {
         case Sensor::Accel:
             return imu.read_accel_uncorrected(sample);
@@ -21,7 +21,7 @@ bus::Status read_one(const Mpu6500& imu, Sensor sensor, Vec3& sample) {
 }
 bus::Status measure_mean_impl(const Mpu6500& imu,
                          Sensor sensor,
-                         Vec3& mean,
+                         math::Vec3& mean,
                          const MeasureOptions& options,
                          uint32_t period_ms) {
 
@@ -29,7 +29,7 @@ bus::Status measure_mean_impl(const Mpu6500& imu,
         return bus::Status::ERROR;
     WaitFunction wait = imu.wait();
     auto warm_up = [&imu, sensor, wait, period_ms](uint16_t samples) -> bus::Status {
-        Vec3 sample{};
+        math::Vec3 sample{};
         for (uint16_t i = 0; i < samples; i++) {
             MPU_RETURN_IF_ERROR(read_one(imu, sensor, sample));
             wait(period_ms);
@@ -39,10 +39,10 @@ bus::Status measure_mean_impl(const Mpu6500& imu,
     };
 
     MPU_RETURN_IF_ERROR(warm_up(options.warmup_samples));
-    Vec3 sample{}, sum{};
+    math::Vec3 sample{}, sum{};
     MPU_RETURN_IF_ERROR(read_one(imu, sensor, sample));
-    Vec3 min_value = sample;
-    Vec3 max_value = sample;
+    math::Vec3 min_value = sample;
+    math::Vec3 max_value = sample;
     wait(period_ms);
     for (uint16_t i = 0; i < options.samples; i++) {
         MPU_RETURN_IF_ERROR(read_one(imu, sensor, sample));
@@ -52,7 +52,7 @@ bus::Status measure_mean_impl(const Mpu6500& imu,
         wait(period_ms);
     }
 
-    const Vec3 diff = max_value - min_value;
+    const math::Vec3 diff = max_value - min_value;
     if (diff.x > options.max_spread || diff.y > options.max_spread || diff.z > options.max_spread)
         return bus::Status::ERROR;
 
@@ -71,7 +71,7 @@ uint32_t hz_to_period_ms(float hz) {
 
 } // namespace
 
-bus::Status measure_mean(const Mpu6500& imu, Sensor sensor, Vec3& mean, const MeasureOptions& options) {
+bus::Status measure_mean(const Mpu6500& imu, Sensor sensor, math::Vec3& mean, const MeasureOptions& options) {
 
     switch (sensor) {
         case Sensor::Gyro:
@@ -87,11 +87,11 @@ bus::Status measure_mean(const Mpu6500& imu, Sensor sensor, Vec3& mean, const Me
     }
 }
 
-bus::Status measure_gyro_offset(const Mpu6500& imu, Vec3& offset, const MeasureOptions& options) {
+bus::Status measure_gyro_offset(const Mpu6500& imu, math::Vec3& offset, const MeasureOptions& options) {
     return measure_mean(imu, Sensor::Gyro, offset, options);
 }
 bus::Status calibrate_gyro(Mpu6500& imu, const MeasureOptions& options) {
-    Vec3 offset{};
+    math::Vec3 offset{};
     MPU_RETURN_IF_ERROR(measure_gyro_offset(imu, offset, options));
 
     imu.set_gyro_offset(offset);
@@ -99,10 +99,10 @@ bus::Status calibrate_gyro(Mpu6500& imu, const MeasureOptions& options) {
 }
 
 bus::Status measure_accel_offset(const Mpu6500& imu,
-                            Vec3& offset,
-                            const Vec3& expected_gravity_g,
+                            math::Vec3& offset,
+                            const math::Vec3& expected_gravity_g,
                             const MeasureOptions& options) {
-    Vec3 mean{};
+    math::Vec3 mean{};
     MPU_RETURN_IF_ERROR(measure_mean(imu, Sensor::Accel, mean, options));
 
     const float magnitude = std::sqrt(mean.x * mean.x + mean.y * mean.y + mean.z * mean.z);
@@ -115,8 +115,8 @@ bus::Status measure_accel_offset(const Mpu6500& imu,
     return bus::Status::OK;
 }
 bus::Status
-calibrate_accel(Mpu6500& imu, const Vec3& expected_gravity_g, const MeasureOptions& options) {
-    Vec3 offset{};
+calibrate_accel(Mpu6500& imu, const math::Vec3& expected_gravity_g, const MeasureOptions& options) {
+    math::Vec3 offset{};
     MPU_RETURN_IF_ERROR(measure_accel_offset(imu, offset, expected_gravity_g, options));
 
     imu.set_accel_offset(offset);

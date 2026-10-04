@@ -85,9 +85,9 @@ struct Power {
 };
 
 struct Calibration {
-    Vec3 accel_offset_g{};
-    Vec3 gyro_offset_dps{};
-    RawVec3 gyro_hw_offset{};
+    math::Vec3 accel_offset_g{};
+    math::Vec3 gyro_offset_dps{};
+    math::RawVec3 gyro_hw_offset{};
 };
 enum class FifoMode : uint8_t { Overwrite = 0, StopWhenFull = 1 };
 struct FifoSources {

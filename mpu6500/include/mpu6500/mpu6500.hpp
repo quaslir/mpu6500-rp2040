@@ -28,13 +28,13 @@ public:
     // Measurement
     [[nodiscard]] bus::Status read_all(Sample& sample) const;
 
-    [[nodiscard]] bus::Status read_accel(Vec3& sample) const;
-    [[nodiscard]] bus::Status read_gyro(Vec3& sample) const;
+    [[nodiscard]] bus::Status read_accel(math::Vec3& sample) const;
+    [[nodiscard]] bus::Status read_gyro(math::Vec3& sample) const;
     [[nodiscard]] bus::Status read_temp(float& sample) const;
 
     [[nodiscard]] bus::Status read_all_uncorrected(Sample& sample) const;
-    [[nodiscard]] bus::Status read_accel_uncorrected(Vec3& sample) const;
-    [[nodiscard]] bus::Status read_gyro_uncorrected(Vec3& sample) const;
+    [[nodiscard]] bus::Status read_accel_uncorrected(math::Vec3& sample) const;
+    [[nodiscard]] bus::Status read_gyro_uncorrected(math::Vec3& sample) const;
 
     // Filters
     [[nodiscard]] bus::Status set_gyro_filter(config::GyroFilter filter);
@@ -42,8 +42,8 @@ public:
     [[nodiscard]] bus::Status set_sample_rate_divider(uint8_t divider);
 
     // Offset
-    void set_accel_offset(const Vec3& offset);
-    void set_gyro_offset(const Vec3& offset);
+    void set_accel_offset(const math::Vec3& offset);
+    void set_gyro_offset(const math::Vec3& offset);
 
     void clear_offsets();
 
@@ -64,7 +64,7 @@ public:
     [[nodiscard]] bool divider_effective() const;
     [[nodiscard]] bus::Status set_sample_rate_hz(uint16_t sample_rate);
 
-    [[nodiscard]] bus::Status set_gyro_hw_offset(const RawVec3& offset);
+    [[nodiscard]] bus::Status set_gyro_hw_offset(const math::RawVec3& offset);
     [[nodiscard]] WaitFunction wait() const;
 
     // FIFO

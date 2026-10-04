@@ -32,22 +32,22 @@ bus::Status Mpu6500::set_sample_rate_divider(uint8_t divider) {
     return bus::Status::OK;
 }
 
-bus::Status Mpu6500::set_gyro_hw_offset(const RawVec3& offset) {
+bus::Status Mpu6500::set_gyro_hw_offset(const math::RawVec3& offset) {
     MPU_RETURN_IF_ERROR(regs_.write_gyro_hw_offset(offset));
 
     config_.calibration.gyro_hw_offset = offset;
 
     return bus::Status::OK;
 }
-void Mpu6500::set_accel_offset(const Vec3& offset) {
+void Mpu6500::set_accel_offset(const math::Vec3& offset) {
     config_.calibration.accel_offset_g = offset;
 }
-void Mpu6500::set_gyro_offset(const Vec3& offset) {
+void Mpu6500::set_gyro_offset(const math::Vec3& offset) {
     config_.calibration.gyro_offset_dps = offset;
 }
 
 void Mpu6500::clear_offsets() {
-    config_.calibration.accel_offset_g = Vec3{};
-    config_.calibration.gyro_offset_dps = Vec3{};
+    config_.calibration.accel_offset_g = math::Vec3{};
+    config_.calibration.gyro_offset_dps = math::Vec3{};
 }
 } // namespace mpu6500

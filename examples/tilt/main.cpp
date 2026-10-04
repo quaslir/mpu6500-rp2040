@@ -41,7 +41,7 @@ float total_tilt_deg(const orientation::Angles& a) {
     return std::acos(c) * RAD_TO_DEG;
 }
 
-float magnitude(const Vec3& v) {
+float magnitude(const math::Vec3& v) {
     return std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
@@ -111,12 +111,12 @@ int main() {
     const bus::Status calibration_status = calibrate_gyro_with_retries(imu);
     if (calibration_status != bus::Status::OK)
         example::halt("gyro calibration failed", calibration_status);
-    const Vec3 gyro_offset = imu.config().calibration.gyro_offset_dps;
+    const math::Vec3 gyro_offset = imu.config().calibration.gyro_offset_dps;
     std::printf(
         "  gyro offset %+.3f %+.3f %+.3f dps\n", gyro_offset.x, gyro_offset.y, gyro_offset.z);
 
     // --- accel calibration (removes the ~0.14 g Z offset and zeroes the level) -
-    Vec3 accel_before{};
+    math::Vec3 accel_before{};
     if (imu.read_accel(accel_before) == bus::Status::OK) {
         const orientation::Angles before = orientation::tilt_from_accel(accel_before);
         std::printf("\n  before accel calibration: roll %+.2f, pitch %+.2f deg, |a| %.3f g\n",
@@ -128,11 +128,11 @@ int main() {
     const bus::Status accel_status = calibrate_accel_with_retries(imu);
     if (accel_status != bus::Status::OK)
         example::halt("accel calibration failed", accel_status);
-    const Vec3 accel_offset = imu.config().calibration.accel_offset_g;
+    const math::Vec3 accel_offset = imu.config().calibration.accel_offset_g;
     std::printf(
         "  accel offset %+.4f %+.4f %+.4f g\n", accel_offset.x, accel_offset.y, accel_offset.z);
 
-    Vec3 accel_after{};
+    math::Vec3 accel_after{};
     if (imu.read_accel(accel_after) == bus::Status::OK) {
         const orientation::Angles after = orientation::tilt_from_accel(accel_after);
         std::printf("  after  accel calibration: roll %+.2f, pitch %+.2f deg, |a| %.3f g\n",

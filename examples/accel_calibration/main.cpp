@@ -23,15 +23,15 @@ constexpr uint32_t LIVE_PRINT_PERIOD_MS = 200;
 
 constexpr float RAD_TO_DEG = 57.29578f;
 
-float magnitude(const Vec3& v) {
+float magnitude(const math::Vec3& v) {
     return std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
 // Average of `samples` accel readings, with or without the stored offset.
-bus::Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, Vec3& mean) {
-    Vec3 sum{};
+bus::Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, math::Vec3& mean) {
+    math::Vec3 sum{};
     for (uint16_t i = 0; i < samples; ++i) {
-        Vec3 accel{};
+        math::Vec3 accel{};
         const bus::Status status = raw ? imu.read_accel_uncorrected(accel) : imu.read_accel(accel);
         if (status != bus::Status::OK)
             return status;
@@ -45,12 +45,12 @@ bus::Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bo
 }
 
 // Tilt angles from gravity only (valid while the board is not accelerating).
-void tilt_deg(const Vec3& a, float& roll, float& pitch) {
+void tilt_deg(const math::Vec3& a, float& roll, float& pitch) {
     roll = std::atan2(a.y, a.z) * RAD_TO_DEG;
     pitch = std::atan2(-a.x, std::sqrt(a.y * a.y + a.z * a.z)) * RAD_TO_DEG;
 }
 
-void print_vec(const char* label, const Vec3& v) {
+void print_vec(const char* label, const math::Vec3& v) {
     std::printf("  %-24s x=%+7.3f  y=%+7.3f  z=%+7.3f g   |a|=%.3f g\n",
                 label,
                 v.x,
@@ -124,7 +124,7 @@ int main() {
 
     // --- 1. before -----------------------------------------------------------
     std::printf("\n[1] Before calibration (average of %u samples):\n", CHECK_SAMPLES);
-    Vec3 before{};
+    math::Vec3 before{};
     const bus::Status before_status = measure_accel_mean(imu, CHECK_SAMPLES, false, before);
     if (before_status != bus::Status::OK)
         example::halt("reading accel failed", before_status);
@@ -137,7 +137,7 @@ int main() {
     if (calibration_status != bus::Status::OK)
         example::halt("accel calibration failed", calibration_status);
 
-    const Vec3 offset = imu.config().calibration.accel_offset_g;
+    const math::Vec3 offset = imu.config().calibration.accel_offset_g;
     std::printf("  measured offset          x=%+7.3f  y=%+7.3f  z=%+7.3f g\n",
                 offset.x,
                 offset.y,
@@ -145,8 +145,8 @@ int main() {
 
     // --- 3. after ------------------------------------------------------------
     std::printf("\n[3] After calibration (average of %u samples):\n", CHECK_SAMPLES);
-    Vec3 after{};
-    Vec3 after_raw{};
+    math::Vec3 after{};
+    math::Vec3 after_raw{};
     const bus::Status after_status = measure_accel_mean(imu, CHECK_SAMPLES, false, after);
     const bus::Status after_raw_status = measure_accel_mean(imu, CHECK_SAMPLES, true, after_raw);
     if (after_status != bus::Status::OK || after_raw_status != bus::Status::OK)
@@ -169,8 +169,8 @@ int main() {
     std::printf("  %-24s | %-24s | %s\n", "corrected [g]", "raw [g]", "roll / pitch [deg]");
 
     for (;;) {
-        Vec3 accel{};
-        Vec3 accel_raw{};
+        math::Vec3 accel{};
+        math::Vec3 accel_raw{};
         const bus::Status status = imu.read_accel(accel);
         const bus::Status raw_status = imu.read_accel_uncorrected(accel_raw);
 

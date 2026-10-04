@@ -113,7 +113,7 @@ int main() {
                     motion_start_ms = ms_now();
                     ++bursts_total;
 
-                    Vec3 accel{};
+                    math::Vec3 accel{};
                     const bus::Status read_status = imu.read_accel(accel);
                     if (read_status == bus::Status::OK)
                         std::printf("[%7lu ms] MOTION #%lu started | "

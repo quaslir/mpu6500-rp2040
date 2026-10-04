@@ -135,7 +135,7 @@ bus::Status Mpu6500Regs::write_sensor_reset() {
         reg::USER_CTRL, bits::user_ctrl::SIG_COND_RST, bits::user_ctrl::SIG_COND_RST);
 }
 
-bus::Status Mpu6500Regs::write_gyro_hw_offset(const RawVec3& offset) {
+bus::Status Mpu6500Regs::write_gyro_hw_offset(const math::RawVec3& offset) {
     MPU_RETURN_IF_ERROR(write_int16(reg::XG_OFFSET_H, reg::XG_OFFSET_L, offset.x));
     MPU_RETURN_IF_ERROR(write_int16(reg::YG_OFFSET_H, reg::YG_OFFSET_L, offset.y));
 

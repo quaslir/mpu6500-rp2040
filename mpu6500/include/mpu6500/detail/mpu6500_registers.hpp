@@ -38,7 +38,7 @@ public:
 
     [[nodiscard]] bus::Status write_signal_path_reset(bool gyro, bool accel, bool temp);
     [[nodiscard]] bus::Status write_sensor_reset();
-    [[nodiscard]] bus::Status write_gyro_hw_offset(const RawVec3& offset);
+    [[nodiscard]] bus::Status write_gyro_hw_offset(const math::RawVec3& offset);
 
     [[nodiscard]] bus::Status write_lp_accel_rate(config::LowPowerAccelRate rate_hz);
     [[nodiscard]] bus::Status write_cycle(bool enabled);

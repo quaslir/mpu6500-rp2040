@@ -191,9 +191,9 @@ void print_axes(const cfg::EnabledAxes& a) {
 
 void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
     const cfg::Config& c = imu.config();
-    const Vec3& ao = c.calibration.accel_offset_g;
-    const Vec3& go = c.calibration.gyro_offset_dps;
-    const RawVec3& hw = c.calibration.gyro_hw_offset;
+    const math::Vec3& ao = c.calibration.accel_offset_g;
+    const math::Vec3& go = c.calibration.gyro_offset_dps;
+    const math::RawVec3& hw = c.calibration.gyro_hw_offset;
     const bool low_power = c.power.mode == cfg::PowerMode::LowPowerAccel;
 
     std::printf("--- status ---\n");
@@ -528,12 +528,12 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
     } else if (std::strcmp(cmd, "calgyro") == 0) {
         std::printf("keep the board still...\n");
         print_result("calibrate_gyro", cal::calibrate_gyro(imu));
-        const Vec3& o = imu.config().calibration.gyro_offset_dps;
+        const math::Vec3& o = imu.config().calibration.gyro_offset_dps;
         std::printf("gyro offset %+.3f %+.3f %+.3f dps\n", o.x, o.y, o.z);
     } else if (std::strcmp(cmd, "calaccel") == 0) {
         std::printf("board flat, chip up, keep still...\n");
         print_result("calibrate_accel", cal::calibrate_accel(imu));
-        const Vec3& o = imu.config().calibration.accel_offset_g;
+        const math::Vec3& o = imu.config().calibration.accel_offset_g;
         std::printf("accel offset %+.4f %+.4f %+.4f g\n", o.x, o.y, o.z);
     } else if (std::strcmp(cmd, "clear") == 0) {
         imu.clear_offsets();
@@ -544,12 +544,12 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         long z = 0;
         if (!parse_long(arg1, -32768, 32767, x) || !parse_long(arg2, -32768, 32767, y) ||
             !parse_long(arg3, -32768, 32767, z)) {
-            const RawVec3& hw = imu.config().calibration.gyro_hw_offset;
+            const math::RawVec3& hw = imu.config().calibration.gyro_hw_offset;
             std::printf("gyro hw offset %d %d %d (raw)\n", hw.x, hw.y, hw.z);
             std::printf("usage: ghwoff <x> <y> <z>   (-32768..32767)\n");
             return;
         }
-        const RawVec3 offset{
+        const math::RawVec3 offset{
             static_cast<int16_t>(x), static_cast<int16_t>(y), static_cast<int16_t>(z)};
         print_result("set_gyro_hw_offset", imu.set_gyro_hw_offset(offset));
     } else {

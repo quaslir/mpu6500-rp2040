@@ -18,7 +18,7 @@ void ComplementaryFilter::reset() {
 Angles ComplementaryFilter::angles() const {
     return angles_;
 }
-Angles ComplementaryFilter::update(const Vec3& accel, const Vec3& gyro_dps, float dt_s) {
+Angles ComplementaryFilter::update(const math::Vec3& accel, const math::Vec3& gyro_dps, float dt_s) {
     if (dt_s <= 0.0f)
         return angles_;
     Angles accel_ang = tilt_from_accel(accel);
@@ -43,7 +43,7 @@ Angles ComplementaryFilter::update(const Vec3& accel, const Vec3& gyro_dps, floa
 
     return angles_;
 }
-Angles tilt_from_accel(const Vec3& accel_g) {
+Angles tilt_from_accel(const math::Vec3& accel_g) {
     const float roll_rad = atan2f(accel_g.y, accel_g.z);
     const float pitch_rad =
         atan2f(-accel_g.x, sqrtf(accel_g.y * accel_g.y + accel_g.z * accel_g.z));

@@ -22,10 +22,10 @@ constexpr uint16_t CHECK_SAMPLES = 100; // samples used for the before/after com
 constexpr uint32_t LIVE_PRINT_PERIOD_MS = 200;
 
 // Average of `samples` gyro readings, with or without the stored offset.
-bus::Status measure_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, Vec3& mean) {
-    Vec3 sum{};
+bus::Status measure_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, math::Vec3& mean) {
+    math::Vec3 sum{};
     for (uint16_t i = 0; i < samples; ++i) {
-        Vec3 gyro{};
+        math::Vec3 gyro{};
         const bus::Status status = raw ? imu.read_gyro_uncorrected(gyro) : imu.read_gyro(gyro);
         if (status != bus::Status::OK)
             return status;
@@ -38,7 +38,7 @@ bus::Status measure_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw
     return bus::Status::OK;
 }
 
-void print_vec(const char* label, const Vec3& v) {
+void print_vec(const char* label, const math::Vec3& v) {
     std::printf("  %-24s x=%+8.3f  y=%+8.3f  z=%+8.3f dps\n", label, v.x, v.y, v.z);
 }
 
@@ -105,7 +105,7 @@ int main() {
 
     // --- 1. before -----------------------------------------------------------
     std::printf("\n[1] Before calibration (average of %u samples):\n", CHECK_SAMPLES);
-    Vec3 before{};
+    math::Vec3 before{};
     const bus::Status before_status = measure_mean(imu, CHECK_SAMPLES, false, before);
     if (before_status != bus::Status::OK)
         example::halt("reading gyro failed", before_status);
@@ -121,8 +121,8 @@ int main() {
 
     // --- 3. after ------------------------------------------------------------
     std::printf("\n[3] After calibration (average of %u samples):\n", CHECK_SAMPLES);
-    Vec3 after{};
-    Vec3 after_raw{};
+    math::Vec3 after{};
+    math::Vec3 after_raw{};
     const bus::Status after_status = measure_mean(imu, CHECK_SAMPLES, false, after);
     const bus::Status after_raw_status = measure_mean(imu, CHECK_SAMPLES, true, after_raw);
     if (after_status != bus::Status::OK || after_raw_status != bus::Status::OK)
@@ -138,8 +138,8 @@ int main() {
     std::printf("  %-32s | %s\n", "corrected [dps]", "raw [dps]");
 
     for (;;) {
-        Vec3 gyro{};
-        Vec3 gyro_raw{};
+        math::Vec3 gyro{};
+        math::Vec3 gyro_raw{};
         const bus::Status status = imu.read_gyro(gyro);
         const bus::Status raw_status = imu.read_gyro_uncorrected(gyro_raw);
 

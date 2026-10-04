@@ -1,8 +1,9 @@
 #pragma once
 #include "math/vec3.hpp"
+namespace sample {
 struct Sample {
-    Vec3 accel_g{};
-    Vec3 gyro_dps{};
+    math::Vec3 accel_g{};
+    math::Vec3 gyro_dps{};
     float temperature_c{};
 };
 struct InterruptFlags {
@@ -10,3 +11,4 @@ struct InterruptFlags {
     bool fifo_overflow{};
     bool wake_on_motion{};
 };
+}

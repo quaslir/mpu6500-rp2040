@@ -10,7 +10,7 @@ inline constexpr float DEFAULT_ACCEL_TOLERANCE_G = 0.2f; // accel trusted only i
 class ComplementaryFilter {
 public:
     ComplementaryFilter(float time_constant_s = 0.2f, float accel_tolerance_g = 0.5f);
-    [[nodiscard]] Angles update(const Vec3& accel, const Vec3& gyro_dps, float dt_s);
+    [[nodiscard]] Angles update(const math::Vec3& accel, const math::Vec3& gyro_dps, float dt_s);
     [[nodiscard]] Angles angles() const;
     void reset();
 
@@ -20,5 +20,5 @@ private:
     float time_constant_s_;
     float accel_tolerance_g_;
 };
-Angles tilt_from_accel(const Vec3& accel_g);
+Angles tilt_from_accel(const math::Vec3& accel_g);
 } // namespace orientation

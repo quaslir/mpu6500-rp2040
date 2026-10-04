@@ -47,7 +47,7 @@ struct AxisStats {
 struct Vec3Stats {
     AxisStats x, y, z;
 
-    void add(const Vec3& v) {
+    void add(const math::Vec3& v) {
         x.add(v.x);
         y.add(v.y);
         z.add(v.z);

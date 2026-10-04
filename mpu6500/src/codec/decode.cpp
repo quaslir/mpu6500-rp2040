@@ -39,8 +39,8 @@ float gyro_range_to_scale(mpu6500::config::GyroRange range) {
     }
     return mpu6500::scale::GYRO_DPS250;
 }
-Vec3 decode_vec3(std::span<const uint8_t, mpu6500::layout::VEC3_SIZE> sample_buffer, float scale) {
-    const RawVec3 raw = bytes_to_raw_vec3(sample_buffer);
+math::Vec3 decode_vec3(std::span<const uint8_t, mpu6500::layout::VEC3_SIZE> sample_buffer, float scale) {
+    const math::RawVec3 raw = bytes_to_raw_vec3(sample_buffer);
     return raw_vec3_to_vec3(raw, scale);
 }
 float decode_temperature(std::span<const uint8_t, mpu6500::layout::TEMP_SIZE> sample_buffer) {
@@ -48,16 +48,16 @@ float decode_temperature(std::span<const uint8_t, mpu6500::layout::TEMP_SIZE> sa
 
     return temp / mpu6500::scale::TEMP_SENSITIVITY + mpu6500::scale::TEMP_REFERENCE_C;
 }
-RawVec3 bytes_to_raw_vec3(std::span<const uint8_t, mpu6500::layout::VEC3_SIZE> bytes) {
-    RawVec3 to_return{};
+math::RawVec3 bytes_to_raw_vec3(std::span<const uint8_t, mpu6500::layout::VEC3_SIZE> bytes) {
+    math::RawVec3 to_return{};
     to_return.x = to_int16(bytes, 0);
     to_return.y = to_int16(bytes, 2);
     to_return.z = to_int16(bytes, 4);
 
     return to_return;
 }
-Vec3 raw_vec3_to_vec3(const RawVec3& raw, float scale) {
-    Vec3 corrected{};
+math::Vec3 raw_vec3_to_vec3(const math::RawVec3& raw, float scale) {
+    math::Vec3 corrected{};
     corrected.x = raw.x / scale;
     corrected.y = raw.y / scale;
     corrected.z = raw.z / scale;
