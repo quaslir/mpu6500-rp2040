@@ -25,7 +25,7 @@ constexpr uint8_t SAMPLE_DIVIDER = 0;            // 1000 / (1 + 9) = 100 Hz
 constexpr uint64_t REPORT_PERIOD_US = 1'000'000; // print once per second
 
 // Set by the GPIO interrupt, cleared by the main loop. No I2C in the interrupt.
-volatile bool pending_int = false;
+static volatile bool pending_int = false;
 
 void irq_callback(uint gpio, uint32_t events) {
     if (gpio == GPIO_INT && (events & GPIO_IRQ_EDGE_RISE))
