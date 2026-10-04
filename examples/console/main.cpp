@@ -2,10 +2,12 @@
 // Type commands over USB serial (e.g. picocom), "help" lists them.
 
 #include "bus_pico/i2c_bus.hpp"
+#include "bus_pico/spi_bus.hpp"
 #include "example_utils.hpp"
 #include "i2c_config.hpp"
 #include "mpu6500/calibration.hpp"
 #include "mpu6500/mpu6500.hpp"
+#include "spi_config.hpp"
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
@@ -565,8 +567,8 @@ int main() {
 
     std::printf("\n=== MPU6500 interactive console ===\n");
 
-    i2c_config::init_test_i2c();
-    bus::pico::I2CBus bus{i2c0, i2c_config::DEVICE_ADDR, I2C_TIMEOUT_US};
+    spi_config::init_test_spi();
+    bus::pico::SPIBus bus{spi0, 15};
 
     cfg::Config config{};
     config.measurement.gyro.filter = cfg::GyroFilter::Hz41;

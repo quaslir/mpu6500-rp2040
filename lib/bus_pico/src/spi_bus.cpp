@@ -21,7 +21,7 @@ bus::Status SPIBus::read_regs(uint8_t reg, std::span<uint8_t> buffer) {
     return bus::Status::OK;
 }
 bus::Status SPIBus::write_reg(uint8_t reg, uint8_t data) {
-    uint8_t reg_write = ~(reg & read_bit_);
+    uint8_t reg_write = reg & static_cast<uint8_t>(~read_bit_);
     std::array<uint8_t, 2> payload{reg_write, data};
     gpio_put(cs_, 0);
     spi_write_blocking(spi_, payload.data(), payload.size());

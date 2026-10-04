@@ -5,7 +5,7 @@
 #include "pico/stdlib.h"
 
 namespace spi_config {
-inline constexpr uint32_t FREQ{5 * 1000 * 1000};
+inline constexpr uint32_t FREQ{1 * 1000 * 1000};
 inline constexpr uint8_t SCK{2};
 inline constexpr uint8_t MOSI{3};
 inline constexpr uint8_t MISO{4};
