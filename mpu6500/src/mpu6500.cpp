@@ -1,9 +1,11 @@
 #include "mpu6500/mpu6500.hpp"
 
+#include "bits.hpp"
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
 #include "device.hpp"
 #include "mpu6500/config.hpp"
+#include "mpu6500/sample.hpp"
 #include <cmath>
 #include <cstdint>
 
@@ -41,7 +43,8 @@ float low_power_rate_to_hz(mpu6500::config::LowPowerAccelRate rate) {
 } // namespace
 namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
-    : regs_(bus), wait_(wait), config_(config), low_mode_(config::LowPowerMode{}), pending_int_flags_(0) {}
+    : regs_(bus), wait_(wait), config_(config), low_mode_(config::LowPowerMode{}),
+      pending_int_flags_(0) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return regs_.read_who_am_i(id);
@@ -109,12 +112,14 @@ Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.fifo_reset());
     uint8_t discarded{}; // UNUSED
     MPU_RETURN_IF_ERROR(regs_.read_int_status(discarded));
+    pending_int_flags_ = 0;
     if (config_.fifo.enabled) {
         MPU_RETURN_IF_ERROR(regs_.write_fifo_enabled(true));
     }
 
     MPU_RETURN_IF_ERROR(regs_.write_int_pin_config(config_.interrupts));
     MPU_RETURN_IF_ERROR(regs_.write_int_sources(config_.interrupts.sources));
+
     return Status::OK;
 }
 
@@ -193,4 +198,14 @@ Status Mpu6500::poll_int_status() {
     pending_int_flags_ |= int_status;
     return Status::OK;
 }
+
+ Status Mpu6500::take_interrupt_flags(InterruptFlags& flags)  {
+     MPU_RETURN_IF_ERROR(poll_int_status());
+     flags.fifo_overflow = pending_int_flags_ & bits::int_status::FIFO_OFLOW;
+     flags.raw_data_ready = pending_int_flags_ & bits::int_status::RAW_DATA_RDY;
+     if(flags.raw_data_ready) {
+         pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::RAW_DATA_RDY);
+     }
+     return Status::OK;
+ }
 } // namespace mpu6500

@@ -89,10 +89,14 @@ inline constexpr uint8_t MASK{TEMP | GYRO_ALL | ACCEL}; // bits 2..0 are SLV0..S
 
 namespace int_status {
 inline constexpr uint8_t FIFO_OFLOW{0x10};
+inline constexpr uint8_t WOM{0x40};          // bit 6, wake-on-motion
+inline constexpr uint8_t FSYNC{0x08};        // bit 3
+inline constexpr uint8_t RAW_DATA_RDY{0x01}; // bit 0, new sample in data registers
 } // namespace int_status
 
 namespace fifo_count {
 inline constexpr uint8_t HIGH_MASK{0x1F}; // FIFO_CNT[12:8]
+
 } // namespace fifo_count
 
 namespace int_pin_cfg {

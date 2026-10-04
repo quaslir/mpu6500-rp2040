@@ -76,6 +76,10 @@ public:
     [[nodiscard]] Status fifo_frame_count(uint16_t& count) const;
     [[nodiscard]] Status read_fifo(std::span<Sample> samples, config::FifoReadResult& fifo_result);
 
+
+    // INTERRUPTS
+    [[nodiscard]] Status take_interrupt_flags(InterruptFlags& flags) ;
+
 private:
     [[nodiscard]] Status apply_config();
     [[nodiscard]] Status poll_int_status();
