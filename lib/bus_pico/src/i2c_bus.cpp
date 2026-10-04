@@ -7,19 +7,19 @@
 #include <pico/error.h>
 
 namespace {
-Status to_status(int result, int expected) {
+bus::Status to_status(int result, int expected) {
     if (result < 0) {
         switch (result) {
             case PICO_ERROR_GENERIC:
-                return Status::NACK;
+                return bus::Status::NACK;
             case PICO_ERROR_TIMEOUT:
-                return Status::TIMEOUT;
+                return bus::Status::TIMEOUT;
             default:
-                return Status::ERROR;
+                return bus::Status::ERROR;
         }
     }
 
-    return result == expected ? Status::OK : Status::ERROR;
+    return result == expected ? bus::Status::OK : bus::Status::ERROR;
 }
 } // namespace
 
@@ -27,20 +27,20 @@ namespace bus::pico {
 
 I2CBus::I2CBus(i2c_inst_t* i2c, uint8_t addr, uint32_t timeout_us)
     : i2c_(i2c), addr_(addr), timeout_us_(timeout_us) {}
-Status I2CBus::read_regs(uint8_t reg, std::span<uint8_t> buffer) {
+bus::Status I2CBus::read_regs(uint8_t reg, std::span<uint8_t> buffer) {
     if (buffer.empty())
-        return Status::ERROR;
+        return bus::Status::ERROR;
     int bytes = i2c_write_timeout_us(i2c_, addr_, &reg, 1, true, timeout_us_);
-    Status write_status = to_status(bytes, 1);
-    if (write_status != Status::OK)
+    bus::Status write_status = to_status(bytes, 1);
+    if (write_status != bus::Status::OK)
         return write_status;
 
     bytes = i2c_read_timeout_us(i2c_, addr_, buffer.data(), buffer.size(), false, timeout_us_);
-    Status read_status = to_status(bytes, static_cast<int>(buffer.size()));
+    bus::Status read_status = to_status(bytes, static_cast<int>(buffer.size()));
 
     return read_status;
 }
-Status I2CBus::write_reg(uint8_t reg, uint8_t data) {
+bus::Status I2CBus::write_reg(uint8_t reg, uint8_t data) {
     std::array<uint8_t, 2> payload{reg, data};
     int bytes =
         i2c_write_timeout_us(i2c_, addr_, payload.data(), payload.size(), false, timeout_us_);

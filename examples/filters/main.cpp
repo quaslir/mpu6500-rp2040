@@ -72,25 +72,25 @@ constexpr std::array<FilterStep, 7> FILTER_STEPS{{
     {"5 Hz", mpu6500::config::GyroFilter::Hz5, mpu6500::config::AccelFilter::Hz5},
 }};
 
-const char* status_text(Status status) {
+const char* status_text(bus::Status status) {
     switch (status) {
-        case Status::OK:
+        case bus::Status::OK:
             return "OK";
-        case Status::TIMEOUT:
+        case bus::Status::TIMEOUT:
             return "TIMEOUT";
-        case Status::NACK:
+        case bus::Status::NACK:
             return "NACK";
-        case Status::ERROR:
+        case bus::Status::ERROR:
             return "ERROR";
     }
     return "UNKNOWN";
 }
 
-void print_status(const char* what, Status status) {
+void print_status(const char* what, bus::Status status) {
     std::printf("  %-28s %s\n", what, status_text(status));
 }
 
-[[noreturn]] void halt(const char* reason, Status status) {
+[[noreturn]] void halt(const char* reason, bus::Status status) {
     for (;;) {
         std::printf("FATAL: %s (%s). Check wiring and restart.\n", reason, status_text(status));
         sleep_ms(2000);
@@ -98,9 +98,9 @@ void print_status(const char* what, Status status) {
 }
 
 bool apply_filter(mpu6500::Mpu6500& imu, const FilterStep& step) {
-    const Status gyro_status = imu.set_gyro_filter(step.gyro);
-    const Status accel_status = imu.set_accel_filter(step.accel);
-    if (gyro_status != Status::OK || accel_status != Status::OK) {
+    const bus::Status gyro_status = imu.set_gyro_filter(step.gyro);
+    const bus::Status accel_status = imu.set_accel_filter(step.accel);
+    if (gyro_status != bus::Status::OK || accel_status != bus::Status::OK) {
         print_status("set_gyro_filter", gyro_status);
         print_status("set_accel_filter", accel_status);
         return false;
@@ -115,7 +115,7 @@ void measure_and_print(mpu6500::Mpu6500& imu, const FilterStep& step) {
 
     for (int i = 0; i < SAMPLES_PER_STEP; ++i) {
         Sample sample{};
-        if (imu.read_all(sample) == Status::OK) {
+        if (imu.read_all(sample) == bus::Status::OK) {
             accel.add(sample.accel_g);
             gyro.add(sample.gyro_dps);
         } else {
@@ -179,12 +179,12 @@ int main() {
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
     uint8_t id{};
-    const Status id_status = imu.who_am_i(id);
+    const bus::Status id_status = imu.who_am_i(id);
     std::printf("WHO_AM_I: 0x%02x (%s)\n", id, status_text(id_status));
 
-    const Status init_status = imu.init();
+    const bus::Status init_status = imu.init();
     print_status("init", init_status);
-    if (init_status != Status::OK)
+    if (init_status != bus::Status::OK)
         halt("init failed", init_status);
 
     const auto& measurement = imu.config().measurement;

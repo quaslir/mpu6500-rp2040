@@ -6,25 +6,25 @@
 
 namespace example {
 
-inline const char* status_text(Status status) {
+inline const char* status_text(bus::Status status) {
     switch (status) {
-        case Status::OK:
+        case bus::Status::OK:
             return "OK";
-        case Status::TIMEOUT:
+        case bus::Status::TIMEOUT:
             return "TIMEOUT";
-        case Status::NACK:
+        case bus::Status::NACK:
             return "NACK";
-        case Status::ERROR:
+        case bus::Status::ERROR:
             return "ERROR";
     }
     return "UNKNOWN";
 }
 
-inline void print_status(const char* what, Status status) {
+inline void print_status(const char* what, bus::Status status) {
     std::printf("  %-28s %s\n", what, status_text(status));
 }
 
-[[noreturn]] inline void halt(const char* reason, Status status) {
+[[noreturn]] inline void halt(const char* reason, bus::Status status) {
     for (;;) {
         std::printf("FATAL: %s (%s). Check wiring and restart.\n", reason, status_text(status));
         sleep_ms(2000);

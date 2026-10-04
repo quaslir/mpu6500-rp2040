@@ -62,22 +62,22 @@ int main() {
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
-    const Status init_status = imu.init();
+    const bus::Status init_status = imu.init();
     example::print_status("init", init_status);
-    if (init_status != Status::OK)
+    if (init_status != bus::Status::OK)
         example::halt("init failed", init_status);
 
     // --- gyro calibration, so the gyro columns read about 0 at rest ----------
     std::printf("\nKeep the board still, calibrating the gyro...\n");
-    const Status calibration_status = cal::calibrate_gyro(imu);
+    const bus::Status calibration_status = cal::calibrate_gyro(imu);
     example::print_status("calibrate_gyro", calibration_status);
-    if (calibration_status != Status::OK)
+    if (calibration_status != bus::Status::OK)
         std::printf("  continuing without gyro calibration\n");
 
     // The FIFO kept filling (and overflowing) during calibration: start clean.
-    const Status reset_status = imu.fifo_reset();
+    const bus::Status reset_status = imu.fifo_reset();
     example::print_status("fifo_reset", reset_status);
-    if (reset_status != Status::OK)
+    if (reset_status != bus::Status::OK)
         example::halt("fifo reset failed", reset_status);
 
     const float rate_hz = imu.gyro_sample_rate_hz();
@@ -113,8 +113,8 @@ int main() {
         }
 
         cfg::FifoReadResult result{};
-        const Status status = imu.read_fifo(samples, result);
-        if (status != Status::OK) {
+        const bus::Status status = imu.read_fifo(samples, result);
+        if (status != bus::Status::OK) {
             std::printf("  read %4d: failed (%s)\n", read_index, example::status_text(status));
             continue;
         }

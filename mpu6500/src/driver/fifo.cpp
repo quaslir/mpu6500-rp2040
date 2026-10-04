@@ -11,36 +11,36 @@
 #include <cstdint>
 
 namespace mpu6500 {
-Status Mpu6500::fifo_reset() {
+bus::Status Mpu6500::fifo_reset() {
     MPU_RETURN_IF_ERROR(regs_.fifo_reset());
     MPU_RETURN_IF_ERROR(poll_int_status());
     pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::FIFO_OFLOW);
-    return Status::OK;
+    return bus::Status::OK;
 }
-[[nodiscard]] Status Mpu6500::fifo_frame_count(uint16_t& count) const {
+[[nodiscard]] bus::Status Mpu6500::fifo_frame_count(uint16_t& count) const {
     if (!config_.fifo.enabled) {
         count = 0;
-        return Status::OK;
+        return bus::Status::OK;
     }
     fifo_frame::FifoFrameLayout layout = fifo_frame::make_fifo_frame_layout(config_.fifo.sources);
     if (layout.size == 0)
-        return Status::ERROR;
+        return bus::Status::ERROR;
     uint16_t size{};
     MPU_RETURN_IF_ERROR(regs_.read_fifo_count(size));
     count = size / layout.size;
-    return Status::OK;
+    return bus::Status::OK;
 }
-[[nodiscard]] Status Mpu6500::read_fifo(std::span<Sample> samples,
+[[nodiscard]] bus::Status Mpu6500::read_fifo(std::span<Sample> samples,
                                         config::FifoReadResult& fifo_result) {
 
     fifo_result.frames = 0;
     fifo_result.overflowed = false;
 
     if (!config_.fifo.enabled || samples.empty())
-        return Status::OK;
+        return bus::Status::OK;
     fifo_frame::FifoFrameLayout layout = fifo_frame::make_fifo_frame_layout(config_.fifo.sources);
     if (layout.size == 0)
-        return Status::ERROR;
+        return bus::Status::ERROR;
     MPU_RETURN_IF_ERROR(poll_int_status());
     if (pending_int_flags_ & bits::int_status::FIFO_OFLOW) {
         fifo_result.overflowed = true;
@@ -48,7 +48,7 @@ Status Mpu6500::fifo_reset() {
         if (config_.fifo.mode == config::FifoMode::Overwrite) {
             MPU_RETURN_IF_ERROR(regs_.fifo_reset());
 
-            return Status::OK;
+            return bus::Status::OK;
         }
     }
 
@@ -56,7 +56,7 @@ Status Mpu6500::fifo_reset() {
     MPU_RETURN_IF_ERROR(fifo_frame_count(available_frames));
     const size_t frames_to_read = std::min(static_cast<size_t>(available_frames), samples.size());
     if (frames_to_read == 0)
-        return Status::OK;
+        return bus::Status::OK;
     std::array<uint8_t, device::FIFO_SIZE_BYTES> buffer{0};
     MPU_RETURN_IF_ERROR(
         regs_.read_fifo_bytes(std::span{buffer}.first(frames_to_read * layout.size)));
@@ -77,6 +77,6 @@ Status Mpu6500::fifo_reset() {
         samples[i] = sample;
     }
     fifo_result.frames = frames_to_read;
-    return Status::OK;
+    return bus::Status::OK;
 }
 } // namespace mpu6500

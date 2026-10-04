@@ -28,12 +28,12 @@ float magnitude(const Vec3& v) {
 }
 
 // Average of `samples` accel readings, with or without the stored offset.
-Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, Vec3& mean) {
+bus::Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool raw, Vec3& mean) {
     Vec3 sum{};
     for (uint16_t i = 0; i < samples; ++i) {
         Vec3 accel{};
-        const Status status = raw ? imu.read_accel_uncorrected(accel) : imu.read_accel(accel);
-        if (status != Status::OK)
+        const bus::Status status = raw ? imu.read_accel_uncorrected(accel) : imu.read_accel(accel);
+        if (status != bus::Status::OK)
             return status;
         sum += accel;
         sleep_ms(SAMPLE_PERIOD_MS);
@@ -41,7 +41,7 @@ Status measure_accel_mean(const mpu6500::Mpu6500& imu, uint16_t samples, bool ra
     mean.x = sum.x / samples;
     mean.y = sum.y / samples;
     mean.z = sum.z / samples;
-    return Status::OK;
+    return bus::Status::OK;
 }
 
 // Tilt angles from gravity only (valid while the board is not accelerating).
@@ -66,10 +66,10 @@ void countdown() {
     }
 }
 
-Status run_calibration(mpu6500::Mpu6500& imu) {
+bus::Status run_calibration(mpu6500::Mpu6500& imu) {
     const auto& options = mpu6500::calibration::DEFAULT_ACCEL_OPTIONS;
     const uint32_t duration_ms = (options.warmup_samples + options.samples) * SAMPLE_PERIOD_MS;
-    Status status = Status::ERROR;
+    bus::Status status = bus::Status::ERROR;
 
     for (int attempt = 1; attempt <= CALIBRATION_ATTEMPTS; ++attempt) {
         std::printf("  calibrating (attempt %d/%d, ~%lu ms)...\n",
@@ -79,7 +79,7 @@ Status run_calibration(mpu6500::Mpu6500& imu) {
 
         status =
             mpu6500::calibration::calibrate_accel(imu, mpu6500::calibration::GRAVITY_Z_UP, options);
-        if (status == Status::OK)
+        if (status == bus::Status::OK)
             return status;
 
         std::printf("  failed: %s (board moved, not lying Z-up, or bus error), retrying in 1 s\n",
@@ -109,12 +109,12 @@ int main() {
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
     uint8_t id{};
-    const Status id_status = imu.who_am_i(id);
+    const bus::Status id_status = imu.who_am_i(id);
     std::printf("WHO_AM_I: 0x%02x (%s)\n", id, example::status_text(id_status));
 
-    const Status init_status = imu.init();
+    const bus::Status init_status = imu.init();
     example::print_status("init", init_status);
-    if (init_status != Status::OK)
+    if (init_status != bus::Status::OK)
         example::halt("init failed", init_status);
 
     std::printf("Filter 41 Hz, sample rate %u Hz\n\n", 1000u / (SAMPLE_DIVIDER + 1u));
@@ -125,16 +125,16 @@ int main() {
     // --- 1. before -----------------------------------------------------------
     std::printf("\n[1] Before calibration (average of %u samples):\n", CHECK_SAMPLES);
     Vec3 before{};
-    const Status before_status = measure_accel_mean(imu, CHECK_SAMPLES, false, before);
-    if (before_status != Status::OK)
+    const bus::Status before_status = measure_accel_mean(imu, CHECK_SAMPLES, false, before);
+    if (before_status != bus::Status::OK)
         example::halt("reading accel failed", before_status);
     print_vec("read_accel", before);
     std::printf("  -> ideal would be x=0 y=0 z=+1 and |a|=1\n");
 
     // --- 2. calibration ------------------------------------------------------
     std::printf("\n[2] Calibration (expected gravity: Z up):\n");
-    const Status calibration_status = run_calibration(imu);
-    if (calibration_status != Status::OK)
+    const bus::Status calibration_status = run_calibration(imu);
+    if (calibration_status != bus::Status::OK)
         example::halt("accel calibration failed", calibration_status);
 
     const Vec3 offset = imu.config().calibration.accel_offset_g;
@@ -147,10 +147,10 @@ int main() {
     std::printf("\n[3] After calibration (average of %u samples):\n", CHECK_SAMPLES);
     Vec3 after{};
     Vec3 after_raw{};
-    const Status after_status = measure_accel_mean(imu, CHECK_SAMPLES, false, after);
-    const Status after_raw_status = measure_accel_mean(imu, CHECK_SAMPLES, true, after_raw);
-    if (after_status != Status::OK || after_raw_status != Status::OK)
-        example::halt("reading accel failed", Status::ERROR);
+    const bus::Status after_status = measure_accel_mean(imu, CHECK_SAMPLES, false, after);
+    const bus::Status after_raw_status = measure_accel_mean(imu, CHECK_SAMPLES, true, after_raw);
+    if (after_status != bus::Status::OK || after_raw_status != bus::Status::OK)
+        example::halt("reading accel failed", bus::Status::ERROR);
     print_vec("read_accel (corrected)", after);
     print_vec("read_accel_raw", after_raw);
     std::printf("  -> corrected should be about (0, 0, +1), raw unchanged\n");
@@ -171,10 +171,10 @@ int main() {
     for (;;) {
         Vec3 accel{};
         Vec3 accel_raw{};
-        const Status status = imu.read_accel(accel);
-        const Status raw_status = imu.read_accel_uncorrected(accel_raw);
+        const bus::Status status = imu.read_accel(accel);
+        const bus::Status raw_status = imu.read_accel_uncorrected(accel_raw);
 
-        if (status != Status::OK || raw_status != Status::OK) {
+        if (status != bus::Status::OK || raw_status != bus::Status::OK) {
             std::printf("  read failed: %s / %s\n",
                         example::status_text(status),
                         example::status_text(raw_status));

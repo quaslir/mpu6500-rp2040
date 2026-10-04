@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <cstdint>
+namespace math {
 struct RawVec3 {
     int16_t x{}, y{}, z{};
 };
@@ -80,4 +81,5 @@ inline Vec3 component_max(const Vec3& vec1, const Vec3& vec2) {
     vec.z = std::max(vec1.z, vec2.z);
 
     return vec;
+}
 }

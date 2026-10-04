@@ -55,19 +55,19 @@ int main() {
 
     mpu6500::Mpu6500 imu{bus, sleep_ms, config};
 
-    const Status init_status = imu.init();
+    const bus::Status init_status = imu.init();
     example::print_status("init", init_status);
-    if (init_status != Status::OK)
+    if (init_status != bus::Status::OK)
         example::halt("init failed", init_status);
 
     // --- calibration (board flat, chip up, do not touch) -----------------------
     std::printf("\nPlace the board flat, chip facing up, and do not touch it...\n");
     sleep_ms(2000);
-    const Status gyro_status = cal::calibrate_gyro(imu);
+    const bus::Status gyro_status = cal::calibrate_gyro(imu);
     example::print_status("calibrate_gyro", gyro_status);
-    const Status accel_status = cal::calibrate_accel(imu);
+    const bus::Status accel_status = cal::calibrate_accel(imu);
     example::print_status("calibrate_accel", accel_status);
-    if (gyro_status != Status::OK || accel_status != Status::OK)
+    if (gyro_status != bus::Status::OK || accel_status != bus::Status::OK)
         std::printf("  calibration failed, continuing with uncalibrated data\n");
 
     // --- GPIO interrupt setup --------------------------------------------------
@@ -80,7 +80,7 @@ int main() {
     // In pulse mode the pin releases itself, but flags collected during calibration are
     // still pending in the driver: take them once so the loop starts clean.
     InterruptFlags flags{};
-    const Status clear_status = imu.take_interrupt_flags(flags);
+    const bus::Status clear_status = imu.take_interrupt_flags(flags);
     example::print_status("take_interrupt_flags", clear_status);
     std::printf("\n");
 
@@ -96,11 +96,11 @@ int main() {
             pending_int = false; // clear first: an interrupt during the reads below is kept
             ++events;
 
-            const Status flags_status = imu.take_interrupt_flags(flags);
-            if (flags_status != Status::OK) {
+            const bus::Status flags_status = imu.take_interrupt_flags(flags);
+            if (flags_status != bus::Status::OK) {
                 ++failed_reads;
             } else if (flags.raw_data_ready) {
-                if (imu.read_all(last_sample) == Status::OK)
+                if (imu.read_all(last_sample) == bus::Status::OK)
                     ++samples;
                 else
                     ++failed_reads;

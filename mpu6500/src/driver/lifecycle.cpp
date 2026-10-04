@@ -45,16 +45,16 @@ namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
     : regs_(bus), wait_(wait), config_(config), pending_int_flags_(0) {}
 
-Status Mpu6500::who_am_i(uint8_t& id) {
+bus::Status Mpu6500::who_am_i(uint8_t& id) {
     return regs_.read_who_am_i(id);
 }
 
-Status Mpu6500::init() {
+bus::Status Mpu6500::init() {
 
     uint8_t id{};
     MPU_RETURN_IF_ERROR(who_am_i(id));
     if (id != device::EXPECTED_ID)
-        return Status::ERROR;
+        return bus::Status::ERROR;
     MPU_RETURN_IF_ERROR(regs_.device_reset());
     wait_(device::RESET_WAIT_MS);
 
@@ -70,7 +70,7 @@ Status Mpu6500::init() {
     return apply_config();
 }
 
-Status Mpu6500::apply_config() {
+bus::Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.write_power_normal());
 
     MPU_RETURN_IF_ERROR(regs_.write_clock_source(config_.power.clock_source));
@@ -105,17 +105,17 @@ Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.write_int_pin_config(config_.interrupts));
     MPU_RETURN_IF_ERROR(regs_.write_int_sources(config_.interrupts.sources));
 
-    return Status::OK;
+    return bus::Status::OK;
 }
 
 const config::Config& Mpu6500::config() const {
     return config_;
 }
 
-Status Mpu6500::reset_signal_paths(bool gyro, bool accel, bool temp) {
+bus::Status Mpu6500::reset_signal_paths(bool gyro, bool accel, bool temp) {
     return regs_.write_signal_path_reset(gyro, accel, temp);
 }
-Status Mpu6500::reset_sensor_registers() {
+bus::Status Mpu6500::reset_sensor_registers() {
     return regs_.write_sensor_reset();
 }
 
@@ -164,11 +164,11 @@ bool Mpu6500::divider_effective() const {
     }
 }
 
-Status Mpu6500::set_sample_rate_hz(uint16_t hz) {
+bus::Status Mpu6500::set_sample_rate_hz(uint16_t hz) {
     if (!divider_effective())
-        return Status::ERROR;
+        return bus::Status::ERROR;
     if (hz < device::MIN_DIVIDED_RATE_HZ || hz > device::INTERNAL_SAMPLE_RATE_HZ)
-        return Status::ERROR;
+        return bus::Status::ERROR;
     uint8_t divider = static_cast<uint8_t>(
         std::lround(static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) / static_cast<float>(hz)) -
         1);

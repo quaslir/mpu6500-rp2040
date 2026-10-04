@@ -160,7 +160,7 @@ bool parse_long(const char* text, long min, long max, long& value) {
     return true;
 }
 
-void print_result(const char* what, Status status) {
+void print_result(const char* what, bus::Status status) {
     std::printf("%s: %s\n", what, example::status_text(status));
 }
 
@@ -350,14 +350,14 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         print_status(imu, state);
     } else if (std::strcmp(cmd, "whoami") == 0) {
         uint8_t id{};
-        const Status status = imu.who_am_i(id);
+        const bus::Status status = imu.who_am_i(id);
         std::printf("WHO_AM_I: 0x%02x (%s)\n", id, example::status_text(status));
     } else if (std::strcmp(cmd, "init") == 0) {
         print_result("init", imu.init());
     } else if (std::strcmp(cmd, "read") == 0) {
         Sample sample{};
-        const Status status = imu.read_all(sample);
-        if (status == Status::OK)
+        const bus::Status status = imu.read_all(sample);
+        if (status == bus::Status::OK)
             print_sample(sample);
         else
             print_result("read", status);
@@ -575,9 +575,9 @@ int main() {
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
-    const Status init_status = imu.init();
+    const bus::Status init_status = imu.init();
     print_result("init", init_status);
-    if (init_status != Status::OK)
+    if (init_status != bus::Status::OK)
         example::halt("init failed", init_status);
 
     ConsoleState state{};
@@ -598,8 +598,8 @@ int main() {
         if (state.streaming && now_ms() - state.last_stream_ms >= state.stream_period_ms) {
             state.last_stream_ms = now_ms();
             Sample sample{};
-            const Status status = imu.read_all(sample);
-            if (status == Status::OK)
+            const bus::Status status = imu.read_all(sample);
+            if (status == bus::Status::OK)
                 print_sample(sample);
             else
                 print_result("read", status);

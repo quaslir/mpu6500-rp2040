@@ -17,16 +17,16 @@ int main() {
     (void)mpu6500.who_am_i(id);
     std::printf("0x%02x\n", id);
 
-    Status status = mpu6500.init();
-    std::cout << (status == Status::OK ? "Mpu6500 ready" : "Init failed") << std::endl;
+    bus::Status status = mpu6500.init();
+    std::cout << (status == bus::Status::OK ? "Mpu6500 ready" : "Init failed") << std::endl;
 
     std::printf("%-26s | %-32s | %s\n", "accel [g]", "gyro [dps]", "temp [C]");
 
     for (;;) {
         Sample sample{};
-        const Status status = mpu6500.read_all(sample);
+        const bus::Status status = mpu6500.read_all(sample);
 
-        if (status != Status::OK) {
+        if (status != bus::Status::OK) {
             std::printf("read_all failed: status %d\n", static_cast<int>(status));
         } else {
             std::printf("%+7.3f %+7.3f %+7.3f    | %+9.2f %+9.2f %+9.2f    | %6.2f\n",

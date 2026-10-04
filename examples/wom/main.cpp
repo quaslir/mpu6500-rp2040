@@ -63,9 +63,9 @@ int main() {
 
     mpu6500::Mpu6500 imu{bus, sleep_ms, config};
 
-    const Status init_status = imu.init();
+    const bus::Status init_status = imu.init();
     example::print_status("init", init_status);
-    if (init_status != Status::OK)
+    if (init_status != bus::Status::OK)
         example::halt("init failed", init_status);
 
     std::printf("  low-power accel at %.2f Hz, motion threshold %u mg\n",
@@ -81,7 +81,7 @@ int main() {
 
     // Drop anything that was flagged while the board was being picked up and plugged in.
     InterruptFlags flags{};
-    const Status clear_status = imu.take_interrupt_flags(flags);
+    const bus::Status clear_status = imu.take_interrupt_flags(flags);
     example::print_status("take_interrupt_flags", clear_status);
 
     std::printf("\nLeave the board still: nothing should be printed.\n");
@@ -99,8 +99,8 @@ int main() {
         if (pending_int) {
             pending_int = false; // clear first: an interrupt during the reads below is kept
 
-            const Status flags_status = imu.take_interrupt_flags(flags);
-            if (flags_status != Status::OK) {
+            const bus::Status flags_status = imu.take_interrupt_flags(flags);
+            if (flags_status != bus::Status::OK) {
                 std::printf("[%7lu ms] take_interrupt_flags failed: %s\n",
                             static_cast<unsigned long>(ms_now()),
                             example::status_text(flags_status));
@@ -114,8 +114,8 @@ int main() {
                     ++bursts_total;
 
                     Vec3 accel{};
-                    const Status read_status = imu.read_accel(accel);
-                    if (read_status == Status::OK)
+                    const bus::Status read_status = imu.read_accel(accel);
+                    if (read_status == bus::Status::OK)
                         std::printf("[%7lu ms] MOTION #%lu started | "
                                     "accel %+6.3f %+6.3f %+6.3f g\n",
                                     static_cast<unsigned long>(motion_start_ms),

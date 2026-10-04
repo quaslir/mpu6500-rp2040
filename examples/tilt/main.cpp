@@ -52,12 +52,12 @@ void countdown() {
     }
 }
 
-Status calibrate_gyro_with_retries(mpu6500::Mpu6500& imu) {
-    Status status = Status::ERROR;
+bus::Status calibrate_gyro_with_retries(mpu6500::Mpu6500& imu) {
+    bus::Status status = bus::Status::ERROR;
     for (int attempt = 1; attempt <= CALIBRATION_ATTEMPTS; ++attempt) {
         std::printf("  gyro calibration, attempt %d/%d...\n", attempt, CALIBRATION_ATTEMPTS);
         status = cal::calibrate_gyro(imu);
-        if (status == Status::OK)
+        if (status == bus::Status::OK)
             return status;
         std::printf("  failed: %s (board moved?), retrying in 1 s\n", example::status_text(status));
         sleep_ms(1000);
@@ -67,12 +67,12 @@ Status calibrate_gyro_with_retries(mpu6500::Mpu6500& imu) {
 
 // Board must lie flat with the chip facing up (Z up). This also "zeroes" the level:
 // the tilt of the surface ends up in the offset, so this position reads 0 / 0 afterwards.
-Status calibrate_accel_with_retries(mpu6500::Mpu6500& imu) {
-    Status status = Status::ERROR;
+bus::Status calibrate_accel_with_retries(mpu6500::Mpu6500& imu) {
+    bus::Status status = bus::Status::ERROR;
     for (int attempt = 1; attempt <= CALIBRATION_ATTEMPTS; ++attempt) {
         std::printf("  accel calibration, attempt %d/%d...\n", attempt, CALIBRATION_ATTEMPTS);
         status = cal::calibrate_accel(imu);
-        if (status == Status::OK)
+        if (status == bus::Status::OK)
             return status;
         std::printf("  failed: %s (board moved or not lying Z-up?), retrying in 1 s\n",
                     example::status_text(status));
@@ -100,16 +100,16 @@ int main() {
 
     mpu6500::Mpu6500 imu(bus, sleep_ms, config);
 
-    const Status init_status = imu.init();
+    const bus::Status init_status = imu.init();
     example::print_status("init", init_status);
-    if (init_status != Status::OK)
+    if (init_status != bus::Status::OK)
         example::halt("init failed", init_status);
 
     // --- gyro calibration (without it the gyro drifts ~8 deg/s) ---------------
     std::printf("\nPlace the board flat and do not touch it.\n");
     countdown();
-    const Status calibration_status = calibrate_gyro_with_retries(imu);
-    if (calibration_status != Status::OK)
+    const bus::Status calibration_status = calibrate_gyro_with_retries(imu);
+    if (calibration_status != bus::Status::OK)
         example::halt("gyro calibration failed", calibration_status);
     const Vec3 gyro_offset = imu.config().calibration.gyro_offset_dps;
     std::printf(
@@ -117,7 +117,7 @@ int main() {
 
     // --- accel calibration (removes the ~0.14 g Z offset and zeroes the level) -
     Vec3 accel_before{};
-    if (imu.read_accel(accel_before) == Status::OK) {
+    if (imu.read_accel(accel_before) == bus::Status::OK) {
         const orientation::Angles before = orientation::tilt_from_accel(accel_before);
         std::printf("\n  before accel calibration: roll %+.2f, pitch %+.2f deg, |a| %.3f g\n",
                     before.roll_deg,
@@ -125,15 +125,15 @@ int main() {
                     magnitude(accel_before));
     }
 
-    const Status accel_status = calibrate_accel_with_retries(imu);
-    if (accel_status != Status::OK)
+    const bus::Status accel_status = calibrate_accel_with_retries(imu);
+    if (accel_status != bus::Status::OK)
         example::halt("accel calibration failed", accel_status);
     const Vec3 accel_offset = imu.config().calibration.accel_offset_g;
     std::printf(
         "  accel offset %+.4f %+.4f %+.4f g\n", accel_offset.x, accel_offset.y, accel_offset.z);
 
     Vec3 accel_after{};
-    if (imu.read_accel(accel_after) == Status::OK) {
+    if (imu.read_accel(accel_after) == bus::Status::OK) {
         const orientation::Angles after = orientation::tilt_from_accel(accel_after);
         std::printf("  after  accel calibration: roll %+.2f, pitch %+.2f deg, |a| %.3f g\n",
                     after.roll_deg,
@@ -166,8 +166,8 @@ int main() {
         last_us = now_us;
 
         Sample sample{};
-        const Status status = imu.read_all(sample);
-        if (status != Status::OK) {
+        const bus::Status status = imu.read_all(sample);
+        if (status != bus::Status::OK) {
             std::printf("  read failed: %s\n", example::status_text(status));
             continue;
         }
