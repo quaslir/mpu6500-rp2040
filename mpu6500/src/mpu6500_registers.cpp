@@ -3,8 +3,10 @@
 #include "bits.hpp"
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
+#include "device.hpp"
 #include "mpu6500/config.hpp"
 #include "registers.hpp"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <span>
@@ -184,5 +186,42 @@ Status Mpu6500Regs::read_fifo_bytes(std::span<uint8_t> buffer) const {
 }
 Status Mpu6500Regs::read_int_status(uint8_t& status) const {
     return bus_.read_regs(reg::INT_STATUS, std::span<uint8_t>(&status, 1));
+}
+
+Status Mpu6500Regs::write_int_pin_config(const config::Interrupts& interrupts) {
+    uint8_t byte{};
+    if (interrupts.level == config::IntLevel::ActiveLow) {
+        byte |= bits::int_pin_cfg::ACTL;
+    }
+    if (interrupts.drive == config::IntDrive::OpenDrain) {
+        byte |= bits::int_pin_cfg::OPEN;
+    }
+    if (interrupts.mode == config::IntMode::Latched) {
+        byte |= bits::int_pin_cfg::LATCH_INT_EN;
+    }
+
+    return update_bits(reg::INT_PIN_CFG, bits::int_pin_cfg::MASK, byte);
+}
+Status Mpu6500Regs::write_int_sources(const config::InterruptSources& sources) {
+    uint8_t byte{};
+    if (sources.raw_data_ready) {
+        byte |= bits::int_enable::RAW_RDY;
+    }
+    if (sources.fifo_overflow) {
+        byte |= bits::int_enable::FIFO_OFLOW;
+    }
+    if(sources.wake_on_motion) {
+        byte |= bits::int_enable::WOM;
+    }
+    return update_bits(reg::INT_ENABLE, bits::int_enable::MASK, byte);
+}
+Status Mpu6500Regs::write_wom_threshold(uint16_t threshold) {
+    uint8_t normalized = static_cast<uint8_t>(threshold / device::WOM_THRESHOLD_MG_PER_LSB);
+    normalized = std::min<uint8_t>(normalized, 255);
+    return bus_.write_reg(reg::WOM_THR, normalized);
+}
+Status Mpu6500Regs::write_accel_intel(bool enabled) {
+    return update_bits(reg::ACCEL_INTEL_CTRL, bits::accel_intel_ctrl::MASK, enabled ?
+        bits::accel_intel_ctrl::ACCEL_INTEL_MODE | bits::accel_intel_ctrl::ACCEL_INTEL_EN : 0);
 }
 } // namespace mpu6500::detail

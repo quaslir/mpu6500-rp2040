@@ -7,7 +7,7 @@ namespace i2c_config {
 inline constexpr uint8_t DEVICE_ADDR{0x68};
 inline constexpr uint8_t SDA{4};
 inline constexpr uint8_t SCL{5};
-inline constexpr uint32_t FREQ{1 * 100 * 1000};
+inline constexpr uint32_t FREQ{4 * 100 * 1000};
 inline void init_test_i2c() {
     sleep_ms(3000);
     i2c_init(i2c0, FREQ);

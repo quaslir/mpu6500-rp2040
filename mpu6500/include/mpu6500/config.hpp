@@ -48,6 +48,7 @@ enum class LowPowerAccelRate : uint8_t {
     Hz250 = 10,
     Hz500 = 11
 };
+enum class PowerMode : uint8_t { Normal = 0, Sleep = 1, LowPowerAccel = 2 };
 
 struct EnabledAxes {
     bool accel_x = true;
@@ -56,18 +57,6 @@ struct EnabledAxes {
     bool gyro_x = true;
     bool gyro_y = true;
     bool gyro_z = true;
-};
-
-struct LowPowerBackup {
-    config::AccelFilter accel_filter = config::AccelFilter::Hz460;
-    bool temperature_enabled{};
-    config::EnabledAxes enabled_axes{};
-};
-
-struct LowPowerMode {
-    bool active{};
-    config::LowPowerAccelRate rate{LowPowerAccelRate::Hz0_24};
-    LowPowerBackup backup{};
 };
 
 struct Accel {
@@ -87,7 +76,8 @@ struct Measurement {
 };
 
 struct Power {
-    bool sleeping{};
+    PowerMode mode{PowerMode::Normal};
+    LowPowerAccelRate low_power_rate{LowPowerAccelRate::Hz0_24};
     bool gyro_standby{};
     bool temperature_enabled{};
     ClockSource clock_source{ClockSource::Auto};
@@ -116,6 +106,29 @@ struct FifoReadResult {
     size_t frames{};
     bool overflowed{};
 };
+enum class IntLevel : uint8_t { ActiveHigh = 0, ActiveLow = 1 };
+
+enum class IntDrive : uint8_t { PushPull = 0, OpenDrain = 1 };
+
+enum class IntMode : uint8_t { Pulse = 0, Latched = 1 };
+
+struct InterruptSources {
+    bool raw_data_ready{};
+    bool fifo_overflow{};
+    bool wake_on_motion{};
+};
+
+struct Interrupts {
+    InterruptSources sources{};
+    IntLevel level{IntLevel::ActiveHigh};
+    IntDrive drive{IntDrive::PushPull};
+    IntMode mode{IntMode::Pulse};
+};
+
+struct WakeOnMotion {
+    bool enabled{false};
+    uint16_t threshold_mg{100};
+};
 
 struct Config {
     bool use_i2c{true};
@@ -123,6 +136,8 @@ struct Config {
     Power power{};
     Calibration calibration{};
     Fifo fifo{};
+    Interrupts interrupts{};
+    WakeOnMotion wake_on_motion{};
 };
 
 } // namespace mpu6500::config

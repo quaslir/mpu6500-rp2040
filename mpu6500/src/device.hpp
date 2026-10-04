@@ -13,4 +13,7 @@ inline constexpr uint32_t GYRO_RATE_BYPASS_HZ{32000};
 inline constexpr uint32_t ACCEL_RATE_BYPASS_HZ{4000};
 inline constexpr uint32_t MIN_DIVIDED_RATE_HZ{4};
 inline constexpr uint16_t FIFO_SIZE_BYTES{512}; // MPU 6500 fifo buffer size
+
+inline constexpr uint16_t WOM_THRESHOLD_MG_PER_LSB{4}; // WOM_THR: 1 LSB = 4 mg
+inline constexpr uint16_t WOM_THRESHOLD_MAX_MG{1020};  // 255 * 4 mg
 } // namespace mpu6500::device

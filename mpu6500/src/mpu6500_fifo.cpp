@@ -13,8 +13,9 @@
 namespace mpu6500 {
 Status Mpu6500::fifo_reset() {
     MPU_RETURN_IF_ERROR(regs_.fifo_reset());
-    uint8_t discarded{}; // UNUSED
-    return regs_.read_int_status(discarded);
+    MPU_RETURN_IF_ERROR(poll_int_status());
+    pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::FIFO_OFLOW);
+    return Status::OK;
 }
 [[nodiscard]] Status Mpu6500::fifo_frame_count(uint16_t& count) const {
     if (!config_.fifo.enabled) {
@@ -40,10 +41,10 @@ Status Mpu6500::fifo_reset() {
     fifo_frame::FifoFrameLayout layout = fifo_frame::make_fifo_frame_layout(config_.fifo.sources);
     if (layout.size == 0)
         return Status::ERROR;
-    uint8_t status{};
-    MPU_RETURN_IF_ERROR(regs_.read_int_status(status));
-    if (status & bits::int_status::FIFO_OFLOW) {
+    MPU_RETURN_IF_ERROR(poll_int_status());
+    if (pending_int_flags_ & bits::int_status::FIFO_OFLOW) {
         fifo_result.overflowed = true;
+        pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::FIFO_OFLOW);
         if (config_.fifo.mode == config::FifoMode::Overwrite) {
             MPU_RETURN_IF_ERROR(regs_.fifo_reset());
 
