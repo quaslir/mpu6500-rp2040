@@ -49,10 +49,11 @@ inline constexpr uint8_t FIFO_COUNT_H{0x72};
 inline constexpr uint8_t FIFO_COUNT_L{0x73};
 inline constexpr uint8_t FIFO_R_W{0x74};
 
-
 // INTERRUPTS
 inline constexpr uint8_t INT_PIN_CFG{0x37};
 inline constexpr uint8_t INT_ENABLE{0x38};
 
-
+// Wake-on-Motion
+inline constexpr uint8_t WOM_THR{0x1F};
+inline constexpr uint8_t ACCEL_INTEL_CTRL{0x69};
 } // namespace mpu6500::reg

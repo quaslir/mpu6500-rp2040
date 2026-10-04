@@ -1,5 +1,6 @@
 #include "bus/status.hpp"
 #include "mpu6500/calibration.hpp"
+#include "mpu6500/config.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include <algorithm>
 #include <cmath>
@@ -74,7 +75,7 @@ Status measure_mean(const Mpu6500& imu, Sensor sensor, Vec3& mean, const Measure
 
     switch (sensor) {
         case Sensor::Gyro:
-            if (imu.is_low_power())
+            if (imu.config().power.mode != config::PowerMode::Normal)
                 return Status::ERROR;
             return measure_mean_impl(
                 imu, sensor, mean, options, hz_to_period_ms(imu.gyro_sample_rate_hz()));

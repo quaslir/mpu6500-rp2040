@@ -8,4 +8,5 @@ struct Sample {
 struct InterruptFlags {
     bool raw_data_ready{};
     bool fifo_overflow{};
+    bool wake_on_motion{};
 };

@@ -3,8 +3,10 @@
 #include "bits.hpp"
 #include "bus/bus.hpp"
 #include "bus/status.hpp"
+#include "device.hpp"
 #include "mpu6500/config.hpp"
 #include "registers.hpp"
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <span>
@@ -208,6 +210,18 @@ Status Mpu6500Regs::write_int_sources(const config::InterruptSources& sources) {
     if (sources.fifo_overflow) {
         byte |= bits::int_enable::FIFO_OFLOW;
     }
+    if(sources.wake_on_motion) {
+        byte |= bits::int_enable::WOM;
+    }
     return update_bits(reg::INT_ENABLE, bits::int_enable::MASK, byte);
+}
+Status Mpu6500Regs::write_wom_threshold(uint16_t threshold) {
+    uint8_t normalized = static_cast<uint8_t>(threshold / device::WOM_THRESHOLD_MG_PER_LSB);
+    normalized = std::min<uint8_t>(normalized, 255);
+    return bus_.write_reg(reg::WOM_THR, normalized);
+}
+Status Mpu6500Regs::write_accel_intel(bool enabled) {
+    return update_bits(reg::ACCEL_INTEL_CTRL, bits::accel_intel_ctrl::MASK, enabled ?
+        bits::accel_intel_ctrl::ACCEL_INTEL_MODE | bits::accel_intel_ctrl::ACCEL_INTEL_EN : 0);
 }
 } // namespace mpu6500::detail

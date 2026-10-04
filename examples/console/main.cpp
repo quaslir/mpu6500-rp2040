@@ -77,6 +77,12 @@ constexpr Named<cfg::ClockSource> CLOCK_SOURCES[] = {
     {"stop", cfg::ClockSource::Stopped},
 };
 
+constexpr Named<cfg::PowerMode> POWER_MODES[] = {
+    {"normal", cfg::PowerMode::Normal},
+    {"sleep", cfg::PowerMode::Sleep},
+    {"lp", cfg::PowerMode::LowPowerAccel},
+};
+
 constexpr Named<cfg::LowPowerAccelRate> LOW_POWER_RATES[] = {
     {"0.24", cfg::LowPowerAccelRate::Hz0_24},
     {"0.49", cfg::LowPowerAccelRate::Hz0_49},
@@ -188,11 +194,13 @@ void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
     const Vec3& ao = c.calibration.accel_offset_g;
     const Vec3& go = c.calibration.gyro_offset_dps;
     const RawVec3& hw = c.calibration.gyro_hw_offset;
+    const bool low_power = c.power.mode == cfg::PowerMode::LowPowerAccel;
 
     std::printf("--- status ---\n");
-    std::printf("  accel     range +-%s g, filter %s\n",
+    std::printf("  accel     range +-%s g, filter %s%s\n",
                 name_of(ACCEL_RANGES, c.measurement.accel.range),
-                name_of(ACCEL_FILTERS, c.measurement.accel.filter));
+                name_of(ACCEL_FILTERS, c.measurement.accel.filter),
+                low_power ? " (not active in lp, chip uses bypass1130)" : "");
     std::printf("  gyro      range +-%s dps, filter %s\n",
                 name_of(GYRO_RANGES, c.measurement.gyro.range),
                 name_of(GYRO_FILTERS, c.measurement.gyro.filter));
@@ -201,16 +209,14 @@ void print_status(const mpu6500::Mpu6500& imu, const ConsoleState& state) {
                 imu.divider_effective() ? "effective" : "ignored by current gyro filter",
                 imu.gyro_sample_rate_hz(),
                 imu.accel_sample_rate_hz());
-    std::printf("  power     sleep=%s standby=%s temp=%s clock=%s\n",
-                on_off(c.power.sleeping),
+    std::printf("  power     mode=%s lp-rate=%s Hz standby=%s temp=%s clock=%s\n",
+                name_of(POWER_MODES, c.power.mode),
+                name_of(LOW_POWER_RATES, c.power.low_power_rate),
                 on_off(c.power.gyro_standby),
                 on_off(c.power.temperature_enabled),
                 name_of(CLOCK_SOURCES, c.power.clock_source));
-    if (imu.is_low_power())
-        std::printf("  low power on, wake-up rate %s Hz (gyro off)\n",
-                    name_of(LOW_POWER_RATES, imu.low_power_rate()));
-    else
-        std::printf("  low power off\n");
+    if (low_power)
+        std::printf("            lp overrides: gyro off, temp off, standby off, accel bypass\n");
     print_axes(c.power.enabled_axes);
     std::printf("  offsets   accel %+.4f %+.4f %+.4f g | gyro %+.3f %+.3f %+.3f dps\n",
                 ao.x,
@@ -246,21 +252,21 @@ void print_help() {
     std::printf("  div <0..255>                  sample rate divider\n");
     std::printf("  hz <4..1000>                  sample rate in Hz (gyro filter 184..5)\n");
     std::printf("\n");
-    std::printf("  sleep on|off                  whole chip sleep\n");
+    std::printf("  power <mode>                 :");
+    print_options(POWER_MODES);
+    std::printf("  lprate <hz>                  :");
+    print_options(LOW_POWER_RATES);
     std::printf("  standby on|off                gyro standby\n");
     std::printf("  temp on|off                   temperature sensor\n");
     std::printf("  clock <src>                  :");
     print_options(CLOCK_SOURCES);
     std::printf("  axis ax|ay|az|gx|gy|gz on|off enable/disable one axis\n");
-    std::printf("  lp <hz>                      :");
-    print_options(LOW_POWER_RATES);
-    std::printf("  lp off                        leave low-power accel mode\n");
     std::printf("\n");
     std::printf("  sigreset [g] [a] [t]          reset signal paths (none given = all)\n");
     std::printf("  sensreset                     reset all paths and clear data registers\n");
     std::printf("\n");
-    std::printf("  calgyro                       gyro calibration (keep still)\n");
-    std::printf("  calaccel                      accel calibration (flat, Z up)\n");
+    std::printf("  calgyro                       gyro calibration (keep still, mode normal)\n");
+    std::printf("  calaccel                      accel calibration (flat, Z up, mode normal)\n");
     std::printf("  clear                         clear software offsets\n");
     std::printf("  ghwoff <x> <y> <z>            gyro hardware offset, raw units\n");
 }
@@ -398,6 +404,8 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
             return;
         }
         print_result("set_accel_filter", imu.set_accel_filter(entry->value));
+        if (imu.config().power.mode == cfg::PowerMode::LowPowerAccel)
+            std::printf("note: saved, applied when you leave lp mode (lp forces bypass)\n");
     } else if (std::strcmp(cmd, "gfilter") == 0) {
         const auto* entry = arg1 ? find_by_name(GYRO_FILTERS, arg1) : nullptr;
         if (entry == nullptr) {
@@ -432,15 +440,29 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
                     imu.accel_sample_rate_hz());
 
         // --- power -----------------------------------------------------------
-    } else if (std::strcmp(cmd, "sleep") == 0) {
-        bool on = false;
-        if (!parse_on_off(arg1, on)) {
-            std::printf("usage: sleep on|off\n");
+    } else if (std::strcmp(cmd, "power") == 0) {
+        const auto* entry = arg1 ? find_by_name(POWER_MODES, arg1) : nullptr;
+        if (entry == nullptr) {
+            std::printf("usage: power");
+            print_options(POWER_MODES);
             return;
         }
-        print_result("set_sleep", imu.set_sleep(on));
-        if (on)
+        print_result("set_power_mode", imu.set_power_mode(entry->value));
+        if (entry->value == cfg::PowerMode::Sleep)
             std::printf("chip sleeps: data registers stop updating\n");
+        else if (entry->value == cfg::PowerMode::LowPowerAccel)
+            std::printf("accel wakes up at %s Hz, gyro and temperature are off\n",
+                        name_of(LOW_POWER_RATES, imu.config().power.low_power_rate));
+    } else if (std::strcmp(cmd, "lprate") == 0) {
+        const auto* entry = arg1 ? find_by_name(LOW_POWER_RATES, arg1) : nullptr;
+        if (entry == nullptr) {
+            std::printf("usage: lprate");
+            print_options(LOW_POWER_RATES);
+            return;
+        }
+        print_result("set_low_power_rate", imu.set_low_power_rate(entry->value));
+        if (imu.config().power.mode != cfg::PowerMode::LowPowerAccel)
+            std::printf("note: saved, used when you enter 'power lp'\n");
     } else if (std::strcmp(cmd, "standby") == 0) {
         bool on = false;
         if (!parse_on_off(arg1, on)) {
@@ -474,20 +496,6 @@ void handle_command(mpu6500::Mpu6500& imu, ConsoleState& state, char* line) {
         }
         print_result("set_enabled_axes", imu.set_enabled_axes(axes));
         print_axes(imu.config().power.enabled_axes);
-    } else if (std::strcmp(cmd, "lp") == 0) {
-        if (arg1 != nullptr && std::strcmp(arg1, "off") == 0) {
-            print_result("exit_low_power_accel", imu.exit_low_power_accel());
-            return;
-        }
-        const auto* entry = arg1 ? find_by_name(LOW_POWER_RATES, arg1) : nullptr;
-        if (entry == nullptr) {
-            std::printf("usage: lp off | lp");
-            print_options(LOW_POWER_RATES);
-            return;
-        }
-        print_result("enter_low_power_accel", imu.enter_low_power_accel(entry->value));
-        if (imu.is_low_power())
-            std::printf("accel updates at %s Hz, gyro is off\n", entry->name);
 
         // --- resets ----------------------------------------------------------
     } else if (std::strcmp(cmd, "sigreset") == 0) {

@@ -115,4 +115,10 @@ inline constexpr uint8_t FSYNC{0x08};
 inline constexpr uint8_t RAW_RDY{0x01};
 inline constexpr uint8_t MASK{WOM | FIFO_OFLOW | FSYNC | RAW_RDY};
 } // namespace int_enable
+
+namespace accel_intel_ctrl {
+inline constexpr uint8_t ACCEL_INTEL_EN{0x80};   // bit 7, enables the wake-on-motion logic
+inline constexpr uint8_t ACCEL_INTEL_MODE{0x40}; // bit 6, 1 = compare with the previous sample
+inline constexpr uint8_t MASK{ACCEL_INTEL_EN | ACCEL_INTEL_MODE}; // bits 5..0 reserved
+} // namespace accel_intel_ctrl
 } // namespace mpu6500::bits

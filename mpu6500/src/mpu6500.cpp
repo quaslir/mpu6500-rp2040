@@ -43,8 +43,7 @@ float low_power_rate_to_hz(mpu6500::config::LowPowerAccelRate rate) {
 } // namespace
 namespace mpu6500 {
 Mpu6500::Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config)
-    : regs_(bus), wait_(wait), config_(config), low_mode_(config::LowPowerMode{}),
-      pending_int_flags_(0) {}
+    : regs_(bus), wait_(wait), config_(config), pending_int_flags_(0) {}
 
 Status Mpu6500::who_am_i(uint8_t& id) {
     return regs_.read_who_am_i(id);
@@ -59,13 +58,6 @@ Status Mpu6500::init() {
     MPU_RETURN_IF_ERROR(regs_.device_reset());
     wait_(device::RESET_WAIT_MS);
 
-    if (low_mode_.active) {
-        config_.measurement.accel.filter = low_mode_.backup.accel_filter;
-        config_.power.temperature_enabled = low_mode_.backup.temperature_enabled;
-        config_.power.enabled_axes = low_mode_.backup.enabled_axes;
-
-        low_mode_.active = false;
-    }
     MPU_RETURN_IF_ERROR(regs_.signal_path_reset());
     wait_(device::RESET_WAIT_MS);
 
@@ -81,16 +73,7 @@ Status Mpu6500::init() {
 Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.write_power_normal());
 
-    MPU_RETURN_IF_ERROR(regs_.write_sleep(config_.power.sleeping));
-
     MPU_RETURN_IF_ERROR(regs_.write_clock_source(config_.power.clock_source));
-
-    MPU_RETURN_IF_ERROR(regs_.write_temperature_enabled(config_.power.temperature_enabled));
-
-    MPU_RETURN_IF_ERROR(regs_.write_gyro_standby(config_.power.gyro_standby));
-
-    MPU_RETURN_IF_ERROR(regs_.write_enabled_axes(config_.power.enabled_axes));
-
     MPU_RETURN_IF_ERROR(regs_.write_accel_range(config_.measurement.accel.range));
 
     MPU_RETURN_IF_ERROR(regs_.write_gyro_range(config_.measurement.gyro.range));
@@ -102,7 +85,9 @@ Status Mpu6500::apply_config() {
     MPU_RETURN_IF_ERROR(regs_.write_sample_rate_divider(config_.measurement.sample_divider));
 
     MPU_RETURN_IF_ERROR(regs_.write_gyro_hw_offset(config_.calibration.gyro_hw_offset));
-
+    MPU_RETURN_IF_ERROR(regs_.write_wom_threshold(config_.wake_on_motion.threshold_mg));
+        MPU_RETURN_IF_ERROR(regs_.write_accel_intel(config_.wake_on_motion.enabled));
+    MPU_RETURN_IF_ERROR(apply_power());
     MPU_RETURN_IF_ERROR(regs_.write_fifo_enabled(false));
 
     MPU_RETURN_IF_ERROR(regs_.write_fifo_sources(config_.fifo.sources));
@@ -135,7 +120,7 @@ Status Mpu6500::reset_sensor_registers() {
 }
 
 float Mpu6500::gyro_sample_rate_hz() const {
-    if (low_mode_.active)
+    if (config_.power.mode != config::PowerMode::Normal)
         return 0.0f;
     switch (config_.measurement.gyro.filter) {
         case config::GyroFilter::Bypass3600Hz:
@@ -150,19 +135,21 @@ float Mpu6500::gyro_sample_rate_hz() const {
     }
 }
 float Mpu6500::accel_sample_rate_hz() const {
-    if (low_mode_.active) {
-        return low_power_rate_to_hz(low_mode_.rate);
-    } else {
-        switch (config_.measurement.accel.filter) {
-            case config::AccelFilter::Bypass1130Hz:
-                return device::ACCEL_RATE_BYPASS_HZ;
-            default:
-                if (divider_effective()) {
-                    return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
-                           static_cast<float>((1 + config_.measurement.sample_divider));
-                }
-                return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ);
-        }
+    if (config_.power.mode == config::PowerMode::Sleep) {
+        return 0.0f;
+    } else if (config_.power.mode == config::PowerMode::LowPowerAccel) {
+        return low_power_rate_to_hz(config_.power.low_power_rate);
+    }
+
+    switch (config_.measurement.accel.filter) {
+        case config::AccelFilter::Bypass1130Hz:
+            return device::ACCEL_RATE_BYPASS_HZ;
+        default:
+            if (divider_effective()) {
+                return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ) /
+                       static_cast<float>((1 + config_.measurement.sample_divider));
+            }
+            return static_cast<float>(device::INTERNAL_SAMPLE_RATE_HZ);
     }
 }
 bool Mpu6500::divider_effective() const {
@@ -199,13 +186,29 @@ Status Mpu6500::poll_int_status() {
     return Status::OK;
 }
 
- Status Mpu6500::take_interrupt_flags(InterruptFlags& flags)  {
-     MPU_RETURN_IF_ERROR(poll_int_status());
-     flags.fifo_overflow = pending_int_flags_ & bits::int_status::FIFO_OFLOW;
-     flags.raw_data_ready = pending_int_flags_ & bits::int_status::RAW_DATA_RDY;
-     if(flags.raw_data_ready) {
-         pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::RAW_DATA_RDY);
-     }
+Status Mpu6500::take_interrupt_flags(InterruptFlags& flags) {
+    MPU_RETURN_IF_ERROR(poll_int_status());
+    flags.fifo_overflow = pending_int_flags_ & bits::int_status::FIFO_OFLOW;
+    flags.raw_data_ready = pending_int_flags_ & bits::int_status::RAW_DATA_RDY;
+    flags.wake_on_motion = pending_int_flags_ & bits::int_status::WOM;
+    if (flags.raw_data_ready) {
+        pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::RAW_DATA_RDY);
+    }
+    if(flags.wake_on_motion) {
+        pending_int_flags_ &= static_cast<uint8_t>(~bits::int_status::WOM);
+    }
+    return Status::OK;
+}
+
+
+Status Mpu6500::set_wake_on_motion(bool enabled) {
+    MPU_RETURN_IF_ERROR(regs_.write_accel_intel(enabled));
+    config_.wake_on_motion.enabled = enabled;
+    return Status::OK;
+}
+ Status Mpu6500::set_wom_threshold(uint16_t threshold) {
+     MPU_RETURN_IF_ERROR(regs_.write_wom_threshold(threshold));
+     config_.wake_on_motion.threshold_mg = threshold;
      return Status::OK;
  }
 } // namespace mpu6500

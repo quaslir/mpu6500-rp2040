@@ -49,7 +49,8 @@ public:
 
     // Calibration
 
-    [[nodiscard]] Status set_sleep(bool enabled);
+    [[nodiscard]] Status set_power_mode(config::PowerMode power_mode);
+    [[nodiscard]] Status set_low_power_rate(config::LowPowerAccelRate rate);
     [[nodiscard]] Status set_gyro_standby(bool enabled);
     [[nodiscard]] Status set_temperature_enabled(bool enabled);
     [[nodiscard]] Status set_clock_source(config::ClockSource source);
@@ -64,10 +65,6 @@ public:
     [[nodiscard]] Status set_sample_rate_hz(uint16_t sample_rate);
 
     [[nodiscard]] Status set_gyro_hw_offset(const RawVec3& offset);
-    [[nodiscard]] Status enter_low_power_accel(config::LowPowerAccelRate rate);
-    [[nodiscard]] Status exit_low_power_accel();
-    [[nodiscard]] bool is_low_power() const;
-    [[nodiscard]] config::LowPowerAccelRate low_power_rate() const;
     [[nodiscard]] WaitFunction wait() const;
 
     // FIFO
@@ -76,17 +73,22 @@ public:
     [[nodiscard]] Status fifo_frame_count(uint16_t& count) const;
     [[nodiscard]] Status read_fifo(std::span<Sample> samples, config::FifoReadResult& fifo_result);
 
-
     // INTERRUPTS
-    [[nodiscard]] Status take_interrupt_flags(InterruptFlags& flags) ;
+    [[nodiscard]] Status take_interrupt_flags(InterruptFlags& flags);
 
+
+    // Wake on motion
+
+    [[nodiscard]] Status set_wake_on_motion(bool enabled);
+    [[nodiscard]] Status set_wom_threshold(uint16_t threshold);
 private:
     [[nodiscard]] Status apply_config();
     [[nodiscard]] Status poll_int_status();
+    [[nodiscard]] Status apply_power();
     detail::Mpu6500Regs regs_;
     WaitFunction wait_;
     config::Config config_;
-    config::LowPowerMode low_mode_;
+
     uint8_t pending_int_flags_;
 };
 } // namespace mpu6500

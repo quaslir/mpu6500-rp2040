@@ -1,4 +1,5 @@
 #include "bus/status.hpp"
+#include "mpu6500/config.hpp"
 #include "mpu6500/mpu6500.hpp"
 
 namespace mpu6500 {
@@ -19,9 +20,10 @@ Status Mpu6500::set_gyro_filter(config::GyroFilter filter) {
     return Status::OK;
 }
 Status Mpu6500::set_accel_filter(config::AccelFilter filter) {
-    MPU_RETURN_IF_ERROR(regs_.write_accel_filter(filter));
     config_.measurement.accel.filter = filter;
-    return Status::OK;
+    if (config_.power.mode == config::PowerMode::LowPowerAccel)
+        return Status::OK;
+    return regs_.write_accel_filter(filter);
 }
 
 Status Mpu6500::set_sample_rate_divider(uint8_t divider) {
