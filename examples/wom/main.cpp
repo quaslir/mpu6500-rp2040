@@ -6,10 +6,10 @@
 
 #include "bus_pico/spi_bus.hpp"
 #include "example_utils.hpp"
-#include "spi_config.hpp"
 #include "mpu6500/config.hpp"
 #include "mpu6500/mpu6500.hpp"
 #include "mpu6500/sample.hpp"
+#include "spi_config.hpp"
 #include <cstdint>
 #include <cstdio>
 #include <pico/stdlib.h>
