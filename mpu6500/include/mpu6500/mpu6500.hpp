@@ -14,7 +14,7 @@ namespace mpu6500 {
 using WaitFunction = void (*)(uint32_t delay_ms);
 class Mpu6500 {
 public:
-    Mpu6500(bus::Bus& bus, WaitFunction, const config::Config& config);
+    Mpu6500(bus::Bus& bus, WaitFunction wait, const config::Config& config);
     Mpu6500(const Mpu6500&) = delete;
     Mpu6500& operator=(const Mpu6500&) = delete;
 
