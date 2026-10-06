@@ -45,6 +45,54 @@ Default wiring used by the examples:
 
 Full wiring, pull-ups and notes in [docs/wiring.md](docs/wiring.md).
 
+## Quick start
+
+Read accelerometer and gyroscope at 100 Hz over I2C:
+
+```cpp
+#include "bus_pico/i2c_bus.hpp"
+#include "mpu6500/mpu6500.hpp"
+#include <cstdio>
+#include <hardware/i2c.h>
+#include <pico/stdlib.h>
+
+int main() {
+    stdio_init_all();
+
+    // The bus is set up by the application, not by the driver.
+    i2c_init(i2c0, 400 * 1000);
+    gpio_set_function(4, GPIO_FUNC_I2C);
+    gpio_set_function(5, GPIO_FUNC_I2C);
+    gpio_pull_up(4);
+    gpio_pull_up(5);
+    bus::pico::I2CBus bus{i2c0, 0x68, 30000};
+
+    namespace cfg = mpu6500::config;
+    cfg::Config config{};
+    config.measurement.gyro.filter = cfg::GyroFilter::Hz41;
+    config.measurement.accel.filter = cfg::AccelFilter::Hz41;
+    config.measurement.sample_divider = 9; // 1000 / (1 + 9) = 100 Hz
+
+    mpu6500::Mpu6500 imu{bus, sleep_ms, config};
+    if (imu.init() != bus::Status::OK) {
+        std::printf("init failed\n");
+        return 1;
+    }
+
+    for (;;) {
+        mpu6500::Sample s{};
+        if (imu.read_all(s) == bus::Status::OK)
+            std::printf("accel %+.3f %+.3f %+.3f g | gyro %+.2f %+.2f %+.2f dps\n",
+                        s.accel_g.x, s.accel_g.y, s.accel_g.z,
+                        s.gyro_dps.x, s.gyro_dps.y, s.gyro_dps.z);
+        sleep_ms(10);
+    }
+}
+```
+
+For SPI, create the bus with `bus::pico::SPIBus bus{spi0, cs_pin};` and set
+`config.use_i2c = false;` so that the chip turns its I2C interface off. Keep the SPI clock
+at 1 MHz or below for `init()` and other configuration calls (datasheet limit for writes).
 
 ## Using the library in your project
 
@@ -65,27 +113,8 @@ target_link_libraries(your_app PRIVATE
 ## Building the examples
 
 ```bash
-mkdir build && cd build
-make -j
+cmake .. && make -j
 ```
-
-Each example produces a `.uf2` in `build/examples/<name>/`. Flash it in BOOTSEL mode or with
-`picotool load -f <file>.uf2`. Output goes to USB serial.
-
-| Example | What it shows |
-|---|---|
-| `whoami` | Bus check: reads the chip ID |
-| `read_data` | Reading accel, gyro and temperature in a loop |
-| `console` | Interactive serial console for every driver setting |
-| `filters` | Noise for each low-pass filter setting |
-| `gyro_calibration` | Gyro offset calibration, before and after |
-| `accel_calibration` | Accel offset calibration, before and after |
-| `tilt` | Roll and pitch with a complementary filter |
-| `fifo` | Batched FIFO reads, rate check and overflow handling |
-| `interrupts` | Data-ready interrupt on the INT pin |
-| `wom` | Wake-on-motion in low-power mode |
-| `benchmark` | Timing of every driver operation, as a Markdown table |
-| `rates` | Predicted vs measured output rates, as a Markdown table |
 
 ## Performance
 
@@ -105,6 +134,7 @@ about 18 % on SPI 1 MHz. Above 1 kHz use SPI with the FIFO.
 
 | Document | Contents |
 |---|---|
+| [docs/api.md](docs/api.md) | Every public function and type |
 | [docs/wiring.md](docs/wiring.md) | Wiring for I2C and SPI, pull-ups, INT pin |
 | [docs/architecture.md](docs/architecture.md) | Layers, design decisions, porting to another MCU |
 | [docs/configuration.md](docs/configuration.md) | Every `Config` field, defaults, sample rate rules |
@@ -142,6 +172,7 @@ docs/            documentation
   timeout. Use 400 kHz, smaller batches, or a longer timeout.
 - **INT pin over I2C:** with the INT wire routed next to SDA/SCL, INT edges can disturb the
   I2C bus at high rates. See [docs/known-issues.md](docs/known-issues.md).
+- **Yaw drifts:** without a magnetometer, heading is only relative.
 
 ## License
 
